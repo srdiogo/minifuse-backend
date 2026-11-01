@@ -1,5 +1,9 @@
 # Installation, operation and removal
 
+For the recommended download, start at [Install in the project README](../README.md#install).
+Use [distribution support](DISTRIBUTION.md) to check whether your target is
+available or planned. This guide covers manual setup and existing installations.
+
 The backend is one source workspace and two native packages: `mf-service`
 (including the compiled core) and `minifuse-driver-dkms` (control driver and
 session access policy). Neither the CLI nor libusb is required. MiniFuse Control

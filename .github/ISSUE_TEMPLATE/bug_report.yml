@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a reproducible problem with this component.
+title: "Bug: "
+body:
+  - type: markdown
+    attributes:
+      value: Keep serials, tokens, private snapshots, operation records, raw USB captures and microphone audio out of public reports. Do not change microphone power or play test tones to fill in this form.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+      description: Explain what you expected and what actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the actions that lead to the problem and whether it repeats.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and installation
+      description: Distribution/release, kernel, MiniFuse model, component versions and installation method. Include desktop/Qt/Omarchy versions when relevant.
+      placeholder: Include exact versions where known; omit serial numbers and private paths.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Relevant evidence
+      description: Optional screenshot or a short redacted error/diagnostic excerpt. Full raw logs are not required.

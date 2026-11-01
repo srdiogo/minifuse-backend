@@ -1,0 +1,29 @@
+name: Installation help
+description: Ask for help installing, updating or removing the components.
+title: "Installation: "
+body:
+  - type: markdown
+    attributes:
+      value: Keep serials, tokens, private snapshots, operation records, raw USB captures and microphone audio out of public reports. Do not change microphone power or play test tones to fill in this form.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to install or change?
+      description: Application, backend, panel, update or removal; include the command or package method used.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and installation
+      description: Distribution/release, kernel, MiniFuse model, component versions and installation method. Include desktop/Qt/Omarchy versions when relevant.
+      placeholder: Include exact versions where known; omit serial numbers and private paths.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Where does it stop?
+      description: Include the exact error and a redacted diagnostic excerpt, if available.
+    validations:
+      required: true

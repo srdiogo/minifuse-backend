@@ -5,7 +5,7 @@ pkgver=@VERSION@
 pkgrel=1
 pkgdesc='MiniFuse Linux control backend'
 arch=('x86_64')
-url='https://github.com/srdiogo/mf-service'
+url='https://github.com/srdiogo/minifuse-backend'
 license=('MIT')
 makedepends=('rust>=1.85' 'python' 'systemd')
 checkdepends=('gcc')

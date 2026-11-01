@@ -1,0 +1,18 @@
+name: Feature request
+description: Suggest a focused improvement for this component.
+title: "Feature: "
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What would this help you do?
+      description: Describe the user problem and relevant device/distribution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behavior
+      description: Explain the improvement and any alternatives you have considered. Firmware changes, effects and device-storage writers are outside the project scope.
+    validations:
+      required: true

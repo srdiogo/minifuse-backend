@@ -25,7 +25,7 @@ including isolated simulated installation, privilege boundaries, reruns,
 backups and configuration-error recovery. The delivered archive was extracted
 and every checksum verified. A read-only dry run on the existing development
 host completed with unchanged desktop-file checksums. The full CI result is
-[recorded here](https://github.com/srdiogo/mf-service/actions/runs/40930560277).
+[recorded here](https://github.com/srdiogo/minifuse-backend/actions/runs/40930560277).
 
 This operator confirmation adds real installation/reboot evidence to those
 software checks. Model-specific controls, other kernels/desktop versions,

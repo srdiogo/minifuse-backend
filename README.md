@@ -1,100 +1,111 @@
-# mf-service
+# MiniFuse Backend
 
-The backend for the MiniFuse Linux control platform. This repository contains
-the `mf-core` Rust library, the `mf-service` user-session process and the Linux
-control driver. It gives
-the standalone application and Omarchy plugin one capability-driven view of
-device state and a serialized, verified operation path through `mf-core`.
+**The shared Linux backend and control driver for MiniFuse Control and desktop integrations.**
 
-**Status: development preview with bounded MiniFuse 4 hardware validation.**
-The foreground server, Linux discovery, API, plans, durable operation identities,
-subscriptions and host presets are implemented. MF4 input switches and calibrated signal-meter subscriptions are implemented.
-Logo-button events and MF1/MF2 mixer operations remain unavailable. Clean-machine and broader hardware acceptance remain open. Building or testing
-does not enable a unit or desktop startup.
+[![Build and tests](https://github.com/srdiogo/minifuse-backend/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/srdiogo/minifuse-backend/actions/workflows/ci.yml)
 
-## Build and run
+Part of **MiniFuse for Linux**, an independent community project for Arturia
+MiniFuse audio interfaces. Most users should start with
+[MiniFuse Control](https://github.com/srdiogo/minifuse-control), the full mixer
+application. This repository provides its driver, shared control library and
+one service running in the logged-in user's session.
 
-Requires Linux, Rust 1.85+, a C compiler for ABI tests and the committed
-`Cargo.lock`. Both Rust crates are built from this workspace.
-The service uses Rust's Unix sockets/threads, Serde, serde_json and libc; Qt and
-libusb are not runtime dependencies. Normal control requires the matching
-administrator-installed MiniFuse module and existing session access.
+[Install](#install) · [Compatibility](#compatibility) · [Documentation](#documentation) · [Get help](SUPPORT.md)
+
+## What it provides
+
+- Shared hardware state for the full application and optional Omarchy panel.
+- MiniFuse 4 mixer, routing, input-mode and phantom-power controls with readback.
+- Calibrated live signal meters and host-side presets.
+- Serialized control operations, capability checks and retained recovery records.
+- A read-only `minifuse-doctor` command for checking an installation.
+
+Normal USB audio continues to use `snd-usb-audio`. The control driver works
+alongside it. The shared `mf-core` library is compiled into the service; the CLI
+is not required, and Qt is needed only by the separate application.
+
+## Install
+
+**Current installation target: Arch Linux x86_64, with optional Omarchy integration.**
+This is a development preview with bounded MiniFuse 4 hardware validation.
+
+Download the archive and its checksum file from the
+[complete installation preview](https://github.com/srdiogo/minifuse-backend/releases/tag/installer-preview-2026-10-29).
+From the download directory:
 
 ```sh
-cargo build --release --locked
-cargo test --workspace --locked
-cargo clippy --workspace --all-targets --locked -- -D warnings
-./target/release/mf-service --help
-./target/release/mf-service
+sha256sum -c minifuse-linux-installer-2026-10-29.tar.gz.sha256
+tar -xzf minifuse-linux-installer-2026-10-29.tar.gz
+cd minifuse-linux-installer-2026-10-29
+./install.sh
 ```
 
-The server uses `$XDG_RUNTIME_DIR/mf-service/control.sock` (0700 directory,
-0600 socket), checks peer UID and refuses to replace a live instance. It never
-falls back to a shared `/tmp` socket, starts as root, loads a module, detaches an
-audio driver or restores a preset automatically. Use Ctrl+C to stop it.
+Run as your normal graphical-session user. The installer verifies the kit and
+shows its plan before requesting confirmation. It prepares dependencies,
+matching kernel headers, native packages and boot/login startup. The default
+installs the application and adds the panel when Omarchy is present.
 
-## Components and installation
+| What you want | Command inside the extracted kit |
+|---|---|
+| Application and backend, without the panel | `./install.sh --profile gui` |
+| Application, backend and Omarchy panel | `./install.sh --profile full` |
+| Backend and Omarchy panel, without the application | `./install.sh --profile omarchy` |
+| Driver and service only | `./install.sh --profile backend` |
+| Inspect the default plan without changes | `./install.sh --dry-run` |
 
-| Component | Role | Runtime |
-|---|---|---|
-| `crates/mf-core` | Typed state, capability gates, planning, verified transport and host snapshots | Compiled into the service |
-| `crates/mf-service` | Shared API, serialization, subscriptions and durable operation identities | One process per user session |
-| `kmod` | Bounded Linux control transport; keeps `snd-usb-audio` bound | `minifuse_mod` kernel module |
-| [MiniFuse Control](https://github.com/srdiogo/minifuse-control) | Full mixer application | Optional separate project |
-| [Omarchy MiniFuse](https://github.com/srdiogo/omarchy-minifuse) | Bar widget and compact mixer | Optional separate project |
+The published GUI packages target Python 3.14. Existing installations and custom
+kernels may need the options in the [installer guide](distribution/INSTALLER.md).
+For manual package builds, startup, updates and removal, use
+[the installation guide](docs/INSTALL.md). Keep the downloaded archive and
+checksum together; a checksum checks integrity against that published file.
 
-The CLI is not required to build, install or run this backend. The core is a
-library, not another background service. GUI and plugin share the same service.
-The wire protocol remains API v1 and existing snapshots retain schema 1.
+## Compatibility
 
-Arch/Omarchy packages are `minifuse-driver-dkms` and `mf-service`. Driver setup
-requires matching kernel headers and administrator access; normal control runs
-as the logged-in user. See [installation from a clean machine](docs/INSTALL.md),
-[package builds](packaging/arch/README.md), [the complete kit installer](distribution/INSTALLER.md)
-and the read-only `minifuse-doctor`.
+| Area | Current status |
+|---|---|
+| MiniFuse 4 | Mixer, routes, input switches and meters have bounded hardware validation |
+| MiniFuse 1 / 2 | Full desktop controls unavailable; their layouts are not inferred from MF4 |
+| Arch Linux x86_64 | Native packages and complete installation kit available |
+| Omarchy | Optional panel; tested host versions are recorded in the desktop source lock |
+| Ubuntu / Debian / Fedora | Native distribution packages planned; current installer does not support them |
+| Other desktop environments | Application has no Omarchy dependency; wider session acceptance remains open |
 
-## API and storage
+An operator confirmed immediate and post-reboot operation of the installation
+kit. The report did not identify a clean-machine versus upgrade setup; see
+[installation evidence](docs/INSTALLATION_VALIDATION.md). Other hardware,
+kernels and desktop combinations need their own validation.
 
-- [API v1 candidate and exact result shapes](docs/IPC.md)
-- [Architecture, bounds and lifecycle](docs/ARCHITECTURE.md)
-- [Implementation status and validation](docs/IMPLEMENTATION.md)
-- [Installation and troubleshooting](docs/INSTALL.md)
-- [Operator-confirmed installation and reboot validation](docs/INSTALLATION_VALIDATION.md)
-- [Hardware integration validation](docs/MF4_VALIDATION.md)
-- [Contribution workflow](CONTRIBUTING.md)
-- [Canonical service/client fixtures](tests/contract/README.md)
+Physical-logo events, effects, firmware changes and device-storage writes are
+outside the available feature set. Presets are files on the computer and are
+restored only by explicit user action.
 
-First negotiate `hello`, then obtain inventory and a confirmed state baseline.
-Faders/pan use bounded continuous gestures through `begin_control` and
-`update_control`; discrete changes use `plan_changes`/`apply_plan`. Snapshot
-restore retains its comparison and explicit apply. See [live controls](docs/LIVE_CONTROLS.md). Accepted
-operations have durable IDs; completion is queried or delivered by event.
-A reconnect or timeout never permits automatic replay. Keep the client token
-and idempotency key when reconciling an uncertain request.
+## The projects
 
-Operation identities are under `$XDG_STATE_HOME/mf-service`, existing core
-backups under `$XDG_STATE_HOME/mf-cli`, and presets under
-`$XDG_DATA_HOME/minifuse/presets`, with standard home-directory fallbacks.
-Snapshots are host files. Readback does not confirm nonvolatile saving.
+| Project | Purpose |
+|---|---|
+| [MiniFuse Control](https://github.com/srdiogo/minifuse-control) | Full mixer, routing, input controls and presets |
+| **MiniFuse Backend** — this repository | Driver, shared core, session API and complete installer |
+| [MiniFuse for Omarchy](https://github.com/srdiogo/omarchy-minifuse) | Optional bar indicator and compact mixer |
 
-Effects, firmware/device-storage writes, raw USB/selectors and host audio
-configuration changes are outside scope. This is an independent community
-project. New material is [MIT licensed](LICENSE); upstream/protocol research
-credits are preserved in [the evidence record](docs/mf4/evidence.md) and
-[third-party notices](THIRD_PARTY.md). The kernel code is GPL-2.0-only; see
-[kmod/LICENSE](kmod/LICENSE).
+The backend repository was previously named `mf-service`. Installed package,
+service, API and data-path names remain compatible. See
+[project names and compatibility](docs/PROJECT_NAMES.md).
 
-MF4 input switch state is read from the validated B2 fields. Typed INST1,
-INST2 and shared phantom-power changes use the same durable plan/apply path
-as mixer changes. Writes require the active module to advertise verified
-input-switch transactions; old modules retain readback without these writes.
-Mixer preset restoration never changes input mode or phantom power.
+## Documentation
 
-Signal meters are read-only, subscriber-driven ephemeral events with a target
-ceiling of 20 Hz. They do not change state revisions or create journals. Mix
-peaks are after master gain and before destination routing; they can differ
-from physical output levels when USB direct bypasses the custom mix.
+- [Installation, diagnostics and removal](docs/INSTALL.md)
+- [Complete installer profiles and recovery](distribution/INSTALLER.md)
+- [Distribution support and packaging roadmap](docs/DISTRIBUTION.md)
+- [Reproducing and validating an installation](docs/REPRODUCING.md)
+- [Hardware validation](docs/MF4_VALIDATION.md)
+- [Development and architecture](docs/DEVELOPMENT.md)
+- [API v1](docs/IPC.md), [live controls](docs/LIVE_CONTROLS.md) and [shared core](docs/CORE.md)
+- [Changelog](CHANGELOG.md), [support](SUPPORT.md) and [contributing](CONTRIBUTING.md)
 
-The standalone [MiniFuse Control GUI](https://github.com/srdiogo/minifuse-control)
-is a separate project. Clients share this service; protocol and kernel changes
-belong in this workspace.
+## Credits and license
+
+This is an independent community project, not an official Arturia product.
+Original contributors and protocol research are credited in
+[the evidence record](docs/mf4/evidence.md) and [third-party notices](THIRD_PARTY.md).
+New service code and documentation use the [MIT license](LICENSE); the control
+driver uses [GPL-2.0-only](kmod/LICENSE). Component licenses remain separate.
