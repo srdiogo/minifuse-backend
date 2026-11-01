@@ -1,0 +1,47 @@
+name: Compatibility report
+description: Share bounded observations from a machine or interface.
+title: "Compatibility: "
+body:
+  - type: markdown
+    attributes:
+      value: Keep serials, tokens, private snapshots, operation records, raw USB captures and microphone audio out of public reports. Do not change microphone power or play test tones to fill in this form.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and installation
+      description: Distribution/release, kernel, MiniFuse model, component versions and installation method. Include desktop/Qt/Omarchy versions when relevant.
+      placeholder: Include exact versions where known; omit serial numbers and private paths.
+    validations:
+      required: true
+  - type: dropdown
+    id: setup
+    attributes:
+      label: Initial machine setup
+      options:
+        - Clean installation
+        - Upgrade or existing installation
+        - Not known
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: What was checked?
+      multiple: true
+      options:
+        - Build or package checks only
+        - Installation and launch
+        - Read-only device state or meters
+        - Controls with device readback
+        - Physical LED confirmation
+        - Operation after reboot
+        - Update or removal
+    validations:
+      required: true
+  - type: textarea
+    id: observations
+    attributes:
+      label: Observations and limits
+      description: Describe exactly what worked or failed. Identify the installed versions and whether hardware was present. Do not infer support for untested controls or other models.
+    validations:
+      required: true

@@ -60,7 +60,7 @@ def export(output, revision="HEAD", root=ROOT):
     (output / "PKGBUILD").write_text(recipe)
     profile = {
         "schema_version": 1,
-        "repository": "https://github.com/srdiogo/mf-service",
+        "repository": "https://github.com/srdiogo/minifuse-backend",
         "commit": commit,
         "package_version": f"{package_version}-1",
         "api_major": 1,

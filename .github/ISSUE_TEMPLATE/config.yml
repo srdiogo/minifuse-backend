@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Installation and troubleshooting
+    url: https://github.com/srdiogo/minifuse-backend/blob/main/SUPPORT.md
+    about: Check the installation guide, compatibility and reporting instructions.
+  - name: Distribution support and roadmap
+    url: https://github.com/srdiogo/minifuse-backend/blob/main/docs/DISTRIBUTION.md
+    about: See available packages and planned distribution support.

@@ -1,5 +1,9 @@
 # Arch source and native packages
 
+These are preview source recipes, not published AUR packages. A future AUR
+submission must generate `.SRCINFO` from its actual reviewed `PKGBUILD`; obsolete
+metadata from the earlier service-only package is not used by this workspace.
+
 This repository owns the complete backend source. `make arch-source` exports a
 clean Git revision to `dist/arch`: deterministic source archive, generated
 `PKGBUILD`, source lock and checksums. The recipe template is `PKGBUILD.in`.

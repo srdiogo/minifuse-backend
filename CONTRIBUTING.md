@@ -31,3 +31,14 @@ After committing, use `tools/prepare_installation_kit.py` with `--base-kit /path
 and `--output /path/to/new-kit` to package the current installer alongside the pinned
 native artifacts. The base kit remains unchanged. The generated manifest and
 build record identify the installer revision separately from the runtime source.
+
+## Community reports and distribution work
+
+Use [support guidance](SUPPORT.md) and the issue forms for bugs, installation
+help, compatibility reports and feature requests. Share exact versions and the
+scope actually tested. Preserve private hardware/user data and existing credits.
+
+Distribution packaging and coordinated previews follow the backend's
+[roadmap](https://github.com/srdiogo/minifuse-backend/blob/main/docs/DISTRIBUTION.md)
+and [release guide](https://github.com/srdiogo/minifuse-backend/blob/main/docs/RELEASING.md).
+Build success alone does not establish support for a new distribution or model.

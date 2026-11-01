@@ -52,7 +52,7 @@ def prepare(base, output):
     shutil.copy2(ROOT / "LICENSE", output / "INSTALLER-LICENSE")
     record = module.load_json(output / "BUILD-RECORD.json")
     record["installer"] = {
-        "repository": "srdiogo/mf-service",
+        "repository": "srdiogo/minifuse-backend",
         "revision": revision,
         "entrypoint": "install.sh",
     }
