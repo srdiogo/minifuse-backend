@@ -128,6 +128,12 @@ impl<H: Hardware> Coordinator<H> {
         }
         let i = self.identity(&p.device_id, &p.generation)?;
         self.revision(i, &p.expected_revision)?;
+        if !self.devices[i].capabilities().mixer {
+            return Err(ApiError::new(
+                "unsupported_capability",
+                "Continuous mixer controls are unavailable for this model",
+            ));
+        }
         // Validate the fixed target through the core before a fresh hardware read.
         mf_core::plan(
             &self.devices[i].descriptor.device,

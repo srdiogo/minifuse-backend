@@ -12,6 +12,22 @@ pub struct Descriptor {
 pub trait Hardware: Send + 'static {
     fn inventory(&mut self) -> Result<Vec<Descriptor>>;
     fn read(&mut self) -> Result<(Device, State)>;
+    fn read_basic(&mut self, _device: &Device) -> Result<(Device, mf_core::BasicState)> {
+        Err(ApiError::new(
+            "unsupported_capability",
+            "Model-specific switch validation is pending; experimental basic transport is disabled",
+        ))
+    }
+    fn execute_basic(
+        &mut self,
+        _plan: &mf_core::BasicPlan,
+        _backups: &Path,
+    ) -> std::result::Result<mf_core::BasicOutcome, mf_core::Error> {
+        Err(mf_core::Error::new(
+            mf_core::ErrorKind::UnsupportedCapability,
+            "Experimental model-specific switch transport is disabled",
+        ))
+    }
     fn module_capabilities(&mut self) -> Result<ModuleCapabilities> {
         Ok(ModuleCapabilities::default())
     }
@@ -29,6 +45,35 @@ pub trait Hardware: Send + 'static {
 }
 pub struct Linux;
 impl Hardware for Linux {
+    fn read_basic(&mut self, device: &Device) -> Result<(Device, mf_core::BasicState)> {
+        if std::env::var("MF_SERVICE_EXPERIMENTAL_BASIC").as_deref() != Ok("1") {
+            return Err(ApiError::new(
+                "unsupported_capability",
+                "This model's hardware validation is pending. Experimental basic controls require an explicitly enabled test session.",
+            ));
+        }
+        let result = Kernel::open(false)?.read_basic()?;
+        if result.0 != *device {
+            return Err(ApiError::new(
+                "device_changed",
+                "Basic readback belongs to a different interface",
+            ));
+        }
+        Ok(result)
+    }
+    fn execute_basic(
+        &mut self,
+        plan: &mf_core::BasicPlan,
+        backups: &Path,
+    ) -> std::result::Result<mf_core::BasicOutcome, mf_core::Error> {
+        if std::env::var("MF_SERVICE_EXPERIMENTAL_BASIC").as_deref() != Ok("1") {
+            return Err(mf_core::Error::new(
+                mf_core::ErrorKind::UnsupportedCapability,
+                "Experimental basic controls are disabled",
+            ));
+        }
+        mf_core::execute_basic(&mut Kernel::open(true)?, plan, backups)
+    }
     fn inventory(&mut self) -> Result<Vec<Descriptor>> {
         let entries = fs::read_dir("/sys/bus/usb/devices")
             .map_err(|e| ApiError::new("device_unavailable", e.to_string()))?;

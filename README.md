@@ -64,11 +64,17 @@ checksum together; a checksum checks integrity against that published file.
 | Area | Current status |
 |---|---|
 | MiniFuse 4 | Mixer, routes, input switches and meters have bounded hardware validation |
-| MiniFuse 1 / 2 | Full desktop controls unavailable; their layouts are not inferred from MF4 |
+| MiniFuse 1 / 2 / 2 OTG | Automatic model layouts; experimental INST, +48 V and direct monitor/mono controls, disabled by default pending hardware tests |
 | Arch Linux x86_64 | Native packages and complete installation kit available |
 | Omarchy | Optional panel; tested host versions are recorded in the desktop source lock |
 | Ubuntu / Debian / Fedora | Native distribution packages planned; current installer does not support them |
 | Other desktop environments | Application has no Omarchy dependency; wider session acceptance remains open |
+
+**Model-support test branch:** see [model-specific controls](docs/models/README.md),
+[static analysis evidence](docs/models/EVIDENCE.md) and the
+[hardware acceptance guide](docs/models/TESTING.md). The installation preview
+linked above predates this feature. We welcome MF1, MF2 and MF2 OTG owners
+who can provide readbacks, LED checks and minimal Windows USB captures.
 
 An operator confirmed immediate and post-reboot operation of the installation
 kit. The report did not identify a clean-machine versus upgrade setup; see

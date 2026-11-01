@@ -310,6 +310,31 @@ mod tests {
         );
         assert_eq!(parts[2], libc::_IOR::<[u8; 16]>(b'M' as u32, 0x42) as u64);
         assert_eq!(parts[3], libc::_IOR::<[u8; 80]>(b'M' as u32, 0x43) as u64);
+        assert_eq!(parts[4], libc::_IOR::<[u8; 68]>(b'M' as u32, 0x44) as u64);
+        assert_eq!(parts[5], libc::_IOWR::<[u8; 136]>(b'M' as u32, 0x45) as u64);
+        let mut basic_hash = 14695981039346656037u64;
+        let mut basic_fold = |v: usize| {
+            basic_hash = (basic_hash ^ v as u64).wrapping_mul(1099511628211);
+        };
+        for pid in [0xaf80, 0xaf90, 0xaf93, 0xaf82, 0xaf92, 0xaf70, 0xaf72] {
+            basic_fold(crate::basic::state_length(pid).unwrap_or(0));
+            for selector in 0..=u16::MAX {
+                for value in 0..=2 {
+                    match crate::basic::target(pid, selector, value) {
+                        Ok((offset, mask)) => {
+                            basic_fold(1);
+                            basic_fold(offset);
+                            basic_fold(mask as usize);
+                        }
+                        Err(_) => basic_fold(0),
+                    }
+                }
+            }
+        }
+        assert_eq!(
+            basic_hash, parts[6],
+            "C and Rust disagree on model-specific validation"
+        );
         let mut hash = 14695981039346656037u64;
         let mut fold = |v: u16| {
             hash = (hash ^ u64::from(v)).wrapping_mul(1099511628211);

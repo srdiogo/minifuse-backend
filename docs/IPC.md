@@ -47,7 +47,8 @@ or a stored preset. Plans include epoch/generation/revision and expire after
 | Method | Parameters | Result |
 |---|---|---|
 | `hello` | Client name, supported API majors; optional previous client token | Negotiated major, version, epoch, client token, protocol features |
-| `list_devices` | Empty | Inventory with model, connection state, capabilities and limitations |
+| `list_devices` | Empty | Inventory with model, connection state, capabilities, versioned presentation profile and limitations |
+| `get_model_profiles` | Empty | Read-only model catalog; no device read or write |
 | `get_state` | Device ID and generation | Confirmed revision, decoded state and capability metadata |
 | `subscribe` | Event names; optional device ID/generation | Subscription ID, current sequence and full relevant baseline |
 | `plan_changes` | Device ID, generation, expected revision, domain changes | Plan ID, predicted state, changes summary, expiry and omitted differences |
@@ -251,3 +252,27 @@ revisions, invalidate plans or produce snapshots/journals. They share existing
 bounded event queues and disconnect-on-overflow behavior; stale data must clear
 in clients (the application uses a 500 ms freshness timeout). No frame is
 replayed after reconnect.
+
+## Model profiles and experimental basic state
+
+Inventory includes `profile` with `schema_version: 1`, stable `id` (`mf1`, `mf2`,
+`mf2_otg`, `mf4`), `device_mode`, `layout`, physical I/O counts, `input_controls`,
+`hardware_validation` and notes. It remains present when transport is disabled.
+`get_model_profiles` returns `{schema_version: 1, profiles: [{product_id, profile}]}`.
+Profiles select presentation; they do not grant any read/write capability.
+Unknown profile schemas/layouts must not enable controls. Multiple recognized
+interfaces require explicit selection; bundled clients leave controls unavailable.
+
+For an explicitly enabled test session, MF1/MF2/OTG `state.layout` is
+`minifuse-basic-b2-v1`, `mixes` is empty and `inputs` contains Boolean `inst1`,
+`phantom_power`, `direct_monitor`, and `inst2` for two-input models. `mixer`,
+`signal_meters` and `host_snapshots` remain false. `switch_readback` requires
+confirmed basic state; `input_switches` additionally requires matching module
+support. `input_switch` changes use the existing plan/apply operation with
+`target: direct_monitor` as an additive target, labeled direct mono on MF2/OTG.
+No live fader gesture, MF4 snapshot restore or raw USB command is exposed.
+Complete-state revisions and durable outcomes retain their existing semantics.
+
+Initialization/storage modes have `layout: initialization`, no input controls
+and no audio capability. See [model support](models/README.md) for the separate
+46/52-byte driver ABI, opt-in gate, evidence and acceptance requirements.

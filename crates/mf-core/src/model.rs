@@ -3,11 +3,13 @@ use serde::{Deserialize, Serialize};
 
 pub const VID: u16 = 0x1c75;
 pub const MF4_PID: u16 = 0xaf70;
+pub const MF2_OTG_PID: u16 = 0xaf93;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Model {
     MiniFuse1,
     MiniFuse2,
+    MiniFuse2Otg,
     MiniFuse4,
 }
 
@@ -16,6 +18,7 @@ impl Model {
         match self {
             Self::MiniFuse1 => "MiniFuse 1",
             Self::MiniFuse2 => "MiniFuse 2",
+            Self::MiniFuse2Otg => "MiniFuse 2 OTG",
             Self::MiniFuse4 => "MiniFuse 4",
         }
     }
@@ -40,8 +43,9 @@ impl Model {
     pub fn from_pid(pid: u16) -> Option<Self> {
         match pid {
             0xaf80 | 0xaf82 => Some(Self::MiniFuse1),
-            0xaf90 => Some(Self::MiniFuse2),
-            MF4_PID => Some(Self::MiniFuse4),
+            0xaf90 | 0xaf92 => Some(Self::MiniFuse2),
+            MF2_OTG_PID => Some(Self::MiniFuse2Otg),
+            MF4_PID | 0xaf72 => Some(Self::MiniFuse4),
             _ => None,
         }
     }
@@ -65,7 +69,8 @@ mod tests {
             assert!(Model::from_pid(pid).unwrap().require_mixer().is_err());
         }
         assert!(Model::from_pid(MF4_PID).unwrap().require_mixer().is_ok());
-        assert!(Model::from_pid(0xaf72).is_none());
+        assert_eq!(Model::from_pid(0xaf72), Some(Model::MiniFuse4));
+        assert_eq!(Model::from_pid(MF2_OTG_PID), Some(Model::MiniFuse2Otg));
         assert!(Model::from_pid(0x1234).is_none());
     }
     #[test]

@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from minifuse_doctor import diagnose, probe
+from minifuse_doctor import diagnose, probe, inventory_summary
 from prepare_arch_package import export
 
 PROJECT = Path(__file__).resolve().parents[2]
@@ -169,10 +169,34 @@ class DoctorTests(unittest.TestCase):
                 "api_major": 1,
                 "device_count": 1,
                 "mf4_ready": True,
+                "device_ready": True,
+                "model": "MiniFuse 4",
+                "experimental": False,
                 "verified_features": True,
             },
         )
         self.assertNotIn("private", json.dumps(report))
+
+    def test_model_readiness_never_requires_mf4_features_from_basic_models(self):
+        for pid in (0xAF80, 0xAF90, 0xAF93):
+            device = dict(
+                product_id=pid,
+                connection="ready",
+                capabilities=dict(switch_readback=True, input_switches=True),
+            )
+            report = inventory_summary([device])
+            self.assertTrue(report["experimental"])
+            self.assertTrue(report["device_ready"])
+            self.assertTrue(report["verified_features"])
+            self.assertFalse(report["mf4_ready"])
+            self.assertFalse(inventory_summary([device, device])["device_ready"])
+            device["connection"] = "unavailable"
+            self.assertFalse(inventory_summary([device])["verified_features"])
+        self.assertFalse(
+            inventory_summary([dict(product_id=0xAF82, connection="ready")])[
+                "device_ready"
+            ]
+        )
 
     def test_untrusted_runtime_and_symlinks_are_rejected_before_connect(self):
         self.root.chmod(0o755)

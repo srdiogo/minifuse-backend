@@ -79,6 +79,7 @@ impl Hardware for Fake {
         Ok(ModuleCapabilities {
             input_switches: d.input_switches,
             signal_meters: d.signal_meters,
+            basic_switches: false,
         })
     }
     fn meters(&mut self) -> Result<(Device, mf_core::Meters)> {

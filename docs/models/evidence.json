@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "evidence_level": "static_host_analysis_not_hardware_validation",
+  "source": {
+    "product": "Arturia MiniFuse Control Center",
+    "version": "1.4.2.1381",
+    "binary_sha256": "e2d8335a67b3be7bbaaf7952d53282e084a10d7d50c28ec4ca529b2e02cf106d",
+    "image_base": "0x140000000",
+    "target_executed": false,
+    "source_unchanged": true
+  },
+  "analysis": {
+    "rea": "6.8.0",
+    "ghidra": "12.1.4",
+    "java": "21.0.13+9",
+    "node": "v26.7.0",
+    "node_support": "Below the declared REA engine range; actual analysis completed successfully",
+    "completed_utc": "2026-11-01T19:41:05.400Z",
+    "disabled_analyzers": [
+      "WindowsResourceReference"
+    ],
+    "assembly_cross_checks": true
+  },
+  "witnesses": [
+    {
+      "finding": "MF1/MF2 state-word count",
+      "rva": "0x708c30",
+      "va": "0x140708c30",
+      "bytes": "b8 17 00 00 00 c3"
+    },
+    {
+      "finding": "MF2 OTG state-word count",
+      "rva": "0x71f290",
+      "va": "0x14071f290",
+      "bytes": "b8 1a 00 00 00 c3"
+    },
+    {
+      "finding": "B2 request",
+      "rva": "0x48ca12",
+      "va": "0x14048ca12",
+      "bytes": "c6 45 77 b2"
+    },
+    {
+      "finding": "state-length virtual dispatch",
+      "rva": "0x48ca27",
+      "va": "0x14048ca27",
+      "bytes": "ff 90 80 00 00 00"
+    },
+    {
+      "finding": "word-to-byte conversion",
+      "rva": "0x48ca2d",
+      "va": "0x14048ca2d",
+      "bytes": "66 03 c0"
+    },
+    {
+      "finding": "state enum-to-byte offset",
+      "rva": "0x48c1e7",
+      "va": "0x14048c1e7",
+      "bytes": "49 8d 14 47"
+    }
+  ],
+  "rea_results": [
+    {
+      "model": "mf1",
+      "function_rva": "0x485f10",
+      "result_sha256": "5a7611fdfe48c50a6b48d8eab362226afc09eac27f2dab2134fe5123ee60b888",
+      "status": "completed"
+    },
+    {
+      "model": "mf2",
+      "function_rva": "0x48d8b0",
+      "result_sha256": "6853b01c749ec7e6df247be2a79ed7e629b6e51a26e51a013ae24216c8e03e21",
+      "status": "completed"
+    },
+    {
+      "model": "mf2otg",
+      "function_rva": "0x495a40",
+      "result_sha256": "f718d60155b8ac82bd3c25b183fe7429ca64c4c007f148860b8ce3aa310dd05f",
+      "status": "completed"
+    }
+  ],
+  "resources": [
+    {
+      "model_resource": "Minifuse1",
+      "file": "param.xml",
+      "sha256": "61f3798a726ca00a617ad82a1b03d0e90b21bfe7c1cf42beb050e2388b85d605",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF80",
+        "sku": "minifuse-1"
+      },
+      "parameter_resource_sha256": "ee1e4044dd9fb75a2d0f68aa179bead063faabad772073820a28fcdeeb948a46"
+    },
+    {
+      "model_resource": "Minifuse1MSD",
+      "file": "param.xml",
+      "sha256": "5be2b770ccd8b9402c4cfbf1dd05cbe9f367d57ec492dc652d19eca9ef7f71db",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF82",
+        "sku": ""
+      }
+    },
+    {
+      "model_resource": "Minifuse2",
+      "file": "param.xml",
+      "sha256": "7a516fb3cf9c4044696da8141104694d57d1cdee9dfb74244c760ac3331d0df4",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF90",
+        "sku": "minifuse-2"
+      },
+      "parameter_resource_sha256": "2444205871bbabb79ae50a7cc6bcc4d001b2dbb42389b0668683cf26b588deee"
+    },
+    {
+      "model_resource": "Minifuse2MSD",
+      "file": "param.xml",
+      "sha256": "acd22019ec801350d155f26d86bf21d37a74060eeec5acba0c5aefa0d8dce100",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF92",
+        "sku": ""
+      }
+    },
+    {
+      "model_resource": "Minifuse2OTG",
+      "file": "param.xml",
+      "sha256": "2bfba6469932ddd3159dc560715ed2e6ecd090d40229aec0a6562def496ffeb4",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF93",
+        "sku": "minifuse-2-otg"
+      },
+      "parameter_resource_sha256": "d13c413e1065329ab67dbd72f258e8c87830a6a60eabcd1508237944c4be620f"
+    },
+    {
+      "model_resource": "Minifuse4",
+      "file": "param.xml",
+      "sha256": "11d3b19de85d001d9ace381424667a9e8253bd6b66204154b6396a53f4e5650e",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF70",
+        "sku": "minifuse-4"
+      },
+      "parameter_resource_sha256": "6628f0ab1f2736ca626bd28f1324cd4ac0914147d3054d8598c8db2ae3cb7bc1"
+    },
+    {
+      "model_resource": "Minifuse4MSD",
+      "file": "param.xml",
+      "sha256": "3fd0e23595b06f1c9b8302b3935d66ce856e4808cd83a3288d6bce0f684f11a8",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF72",
+        "sku": ""
+      }
+    }
+  ]
+}

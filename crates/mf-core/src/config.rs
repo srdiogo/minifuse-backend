@@ -67,20 +67,29 @@ fn parent(path: &Path) -> &Path {
         .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or(Path::new("."))
 }
-fn sync_parent(path: &Path) -> Result<(), String> {
+pub(crate) fn sync_parent(path: &Path) -> Result<(), String> {
     File::open(parent(path))
         .and_then(|f| f.sync_all())
         .map_err(|e| e.to_string())
 }
 
-fn create_backup_dir(path: &Path) -> Result<(), String> {
+pub(crate) fn create_backup_dir(path: &Path) -> Result<(), String> {
     let mut missing = Vec::new();
     let mut cursor = path;
     while !cursor.as_os_str().is_empty() && !cursor.exists() {
         missing.push(cursor.to_path_buf());
         cursor = parent(cursor);
     }
-    fs::create_dir_all(path).map_err(|e| format!("Cannot create backup directory: {e}"))?;
+    let mut builder = fs::DirBuilder::new();
+    builder.recursive(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        builder.mode(0o700);
+    }
+    builder
+        .create(path)
+        .map_err(|e| format!("Cannot create backup directory: {e}"))?;
     // Sync newly created directory entries as well as the eventual files.
     for directory in missing.into_iter().rev() {
         File::open(&directory)
