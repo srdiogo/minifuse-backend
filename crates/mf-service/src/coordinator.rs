@@ -17,7 +17,7 @@ mod live;
 
 const MAX_PLANS: usize = 128;
 const MAX_OPERATIONS: usize = 4096;
-const EVENTS: [&str; 8] = [
+const EVENTS: [&str; 9] = [
     "device_added",
     "device_removed",
     "capabilities_changed",
@@ -26,6 +26,7 @@ const EVENTS: [&str; 8] = [
     "operation_finished",
     "control_updated",
     "meters_updated",
+    "control_panel_requested",
 ];
 macro_rules! outcome_value {
     ($value:expr) => {{
@@ -54,10 +55,28 @@ struct DeviceState {
     error: Option<ApiError>,
     module: ModuleCapabilities,
     meter_retry: Instant,
+    button_observation: Option<(u8, Instant)>,
 }
 impl DeviceState {
+    fn button_counter(&self) -> Option<u8> {
+        // Physical evidence covers normal-mode MF4, USB firmware descriptor 1.0.1 only.
+        if self.descriptor.device.product_id != mf_core::MF4_PID
+            || self.descriptor.model != Model::MiniFuse4
+            || self.descriptor.firmware != mf_core::FirmwareVersion::from_bcd(0x0101)
+        {
+            return None;
+        }
+        self.state.as_ref()?.control_panel_counter()
+    }
     fn capabilities(&self) -> Capabilities {
         let mut capabilities = self.descriptor.model.capabilities();
+        capabilities.control_panel_button = self.button_counter().is_some();
+        if capabilities.control_panel_button {
+            capabilities.limitations = vec![
+                "Input writes and signal meters require matching module features.",
+                "Short-press logo events are validated only for MiniFuse 4 USB firmware descriptor 1.0.1; desktop activation requires an optional session agent.",
+            ];
+        }
         if self
             .descriptor
             .model
@@ -352,6 +371,15 @@ impl<H: Hardware> Coordinator<H> {
     pub fn has_subscribers(&self) -> bool {
         self.clients.values().any(|c| !c.events.is_empty())
     }
+    pub fn has_control_panel_subscribers(&self) -> bool {
+        self.devices.iter().any(|d| {
+            d.button_counter().is_some()
+                && self.clients.values().any(|c| {
+                    c.events.contains("control_panel_requested")
+                        && c.device.as_ref().is_none_or(|id| id == &d.id)
+                })
+        })
+    }
     pub fn has_meter_subscribers(&self) -> bool {
         self.clients
             .values()
@@ -451,6 +479,7 @@ impl<H: Hardware> Coordinator<H> {
                     let basic_changed = self.devices[i].basic.take().is_some();
                     let changed = mixer_changed || basic_changed;
                     self.devices[i].error = Some(error.clone());
+                    self.devices[i].button_observation = None;
                     if changed {
                         let id = self.devices[i].id.clone();
                         self.emit(
@@ -491,6 +520,7 @@ impl<H: Hardware> Coordinator<H> {
                     error: None,
                     module: ModuleCapabilities::default(),
                     meter_retry: Instant::now(),
+                    button_observation: None,
                 }
             };
             self.devices.push(entry);
@@ -601,7 +631,8 @@ impl<H: Hardware> Coordinator<H> {
             match result {
                 Ok((device, state, module)) if device == self.devices[i].descriptor.device => {
                     let changed = self.devices[i].state.as_ref() != Some(&state);
-                    let capabilities_changed = self.devices[i].module != module;
+                    let previous_button = self.devices[i].button_counter().is_some();
+                    let module_changed = self.devices[i].module != module;
                     let recovered = self.devices[i].error.is_some();
                     if recovered {
                         let id = self.devices[i].id.clone();
@@ -612,6 +643,18 @@ impl<H: Hardware> Coordinator<H> {
                     d.error = None;
                     d.state = Some(state);
                     d.module = module;
+                    let now = Instant::now();
+                    let counter = d.button_counter();
+                    let requested = counter.is_some_and(|current| {
+                        !recovered
+                            && d.button_observation.is_some_and(|(previous, seen)| {
+                                previous != current
+                                    && now.duration_since(seen) <= Duration::from_secs(2)
+                            })
+                    });
+                    d.button_observation = counter.map(|counter| (counter, now));
+                    let capabilities_changed =
+                        module_changed || previous_button != counter.is_some();
                     if changed || recovered || capabilities_changed {
                         d.revision = storage::token();
                         let id = d.id.clone();
@@ -620,6 +663,13 @@ impl<H: Hardware> Coordinator<H> {
                             self.emit("capabilities_changed",Some(&id),json!({"device_id":id,"available":true,"capabilities":self.devices[i].capabilities()}));
                         }
                         self.emit("state_changed", Some(&id), self.state_value(i)?);
+                    }
+                    if requested {
+                        let d = &self.devices[i];
+                        let id = d.id.clone();
+                        let data = json!({"device_id":id,"generation":d.generation,
+                            "event_id":storage::token(),"source":"arturia_logo","gesture":"short_press"});
+                        self.emit("control_panel_requested", Some(&id), data);
                     }
                 }
                 result => {
@@ -632,6 +682,7 @@ impl<H: Hardware> Coordinator<H> {
                     let changed = self.devices[i].state.take().is_some()
                         || self.devices[i].error.as_ref().map(|e| e.code) != Some(error.code);
                     self.devices[i].error = Some(error);
+                    self.devices[i].button_observation = None;
                     let id = self.devices[i].id.clone();
                     self.plans.retain(|_, p| p.device_id != id);
                     if changed {

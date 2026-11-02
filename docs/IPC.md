@@ -144,7 +144,11 @@ Initial reads/reconnection do not synthesize button or operation events.
 `control_panel_requested` contains device identity and a unique event ID, not
 an executable command or an Omarchy-specific target. One desktop agent owns
 activation policy. Multiple UIs can subscribe to state without all opening in
-response to the same hardware event.
+response to the same hardware event. Its data contains `device_id`, `generation`,
+`event_id`, `source: "arturia_logo"` and `gesture: "short_press"`. Subscribe only
+when runtime `capabilities.control_panel_button` is true. Support currently
+covers normal-mode MF4 with USB firmware descriptor 1.0.1 and a confirmed
+counter; see [evidence, polling and reset rules](mf4/logo-button.md).
 
 ## Retry and compatibility rules
 

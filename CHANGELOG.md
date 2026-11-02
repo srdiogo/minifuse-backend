@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Emit validated MF4 logo short-press events with firmware gating, startup/recovery baselines and independent event IDs.
+
 - Present MiniFuse Backend as part of MiniFuse for Linux with a user-oriented README,
   compatibility table and direct installation guidance.
 - Add support routing, issue forms and contribution/release documentation.

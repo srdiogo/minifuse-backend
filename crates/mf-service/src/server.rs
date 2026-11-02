@@ -311,7 +311,9 @@ pub fn run<H: Hardware>(
                 Err(mpsc::RecvTimeoutError::Disconnected) => break,
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
             }
-            let interval = if coordinator.has_subscribers() {
+            let interval = if coordinator.has_control_panel_subscribers() {
+                Duration::from_millis(200)
+            } else if coordinator.has_subscribers() {
                 Duration::from_secs(1)
             } else {
                 Duration::from_secs(5)

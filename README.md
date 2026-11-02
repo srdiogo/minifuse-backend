@@ -81,7 +81,7 @@ kit. The report did not identify a clean-machine versus upgrade setup; see
 [installation evidence](docs/INSTALLATION_VALIDATION.md). Other hardware,
 kernels and desktop combinations need their own validation.
 
-Physical-logo events, effects, firmware changes and device-storage writes are
+MF4 short-press logo events are available with validated USB firmware descriptor 1.0.1; see [button support](docs/mf4/logo-button.md). Effects, firmware changes and device-storage writes are
 outside the available feature set. Presets are files on the computer and are
 restored only by explicit user action.
 

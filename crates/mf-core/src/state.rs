@@ -69,6 +69,11 @@ pub struct Inputs {
 }
 
 impl State {
+    /// Validated MF4 B2 short-release counter. The caller must gate model/firmware.
+    pub fn control_panel_counter(&self) -> Option<u8> {
+        let counter = self.word(14);
+        (counter < 10).then_some(counter as u8)
+    }
     pub fn inputs(&self) -> Inputs {
         Inputs {
             inst1: self.word(0) & 1 != 0,

@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "model": "MiniFuse 4",
+  "vendor_id": "1c75",
+  "product_id": "af70",
+  "usb_firmware_bcd": "0101",
+  "capture_sha256": "bcfa36f495b17a68ab6ce36426b49b15c8826f06b6bf7e518b4cbd092b6d0504",
+  "device_write_attempted": false,
+  "observations": [
+    {
+      "elapsed_s": 0.000283,
+      "counter": 7,
+      "changed_byte_offsets": []
+    },
+    {
+      "elapsed_s": 28.210935,
+      "counter": 8,
+      "changed_byte_offsets": [
+        14
+      ]
+    },
+    {
+      "elapsed_s": 97.396233,
+      "counter": 9,
+      "changed_byte_offsets": [
+        14
+      ]
+    },
+    {
+      "elapsed_s": 103.019612,
+      "counter": 0,
+      "changed_byte_offsets": [
+        14
+      ]
+    }
+  ],
+  "static_sources": [
+    {
+      "name": "MiniFuseControlCenterAgent.exe",
+      "sha256": "a42618f7f29b3f527f945b3e56a2020a69050371e3cd3e4e2e03445f0d767f99",
+      "image_base": "0x140000000",
+      "baseline_rva": "0x433aa0",
+      "compare_launch_or_present_rva": "0x433d30"
+    },
+    {
+      "name": "MF4 firmware 1.0.1.35",
+      "sha256": "c1d196e85624d72206e49447e769011c1d85982f212809138c7723bdc69a1e98",
+      "short_release_address": "0x6514"
+    }
+  ]
+}
