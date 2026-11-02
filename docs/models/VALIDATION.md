@@ -6,7 +6,8 @@ captures, real-device completion lengths or measured audio behavior.
 
 | Check | Result |
 |---|---|
-| Rust 1.85.1 workspace | 73 tests passed, including five basic/native-model service scenarios |
+| Rust 1.85.1 workspace | 74 tests passed, including five basic/native-model service scenarios |
+| Driver fault injection | 122 scenarios passed using the production transaction header with in-memory kernel/USB hooks; AddressSanitizer and UndefinedBehaviorSanitizer enabled |
 | C/Rust protocol agreement | Passed: old and additive ioctl sizes/offsets, selector/value decisions and every 16-bit firmware descriptor across normal, initialization and unsupported model IDs |
 | Firmware policy | Missing/malformed/old/unreviewed versions blocked; model-specific families, descriptor agreement and stale-plan invalidation tested |
 | Native core | Synthetic gain/pan/mute/master/routing, model source groups, opaque-byte preservation, scoped snapshot restore and meter decoder checked |
@@ -20,7 +21,7 @@ captures, real-device completion lengths or measured audio behavior.
 | GUI native layouts | All three models rendered; stable faders on readback, firmware agreement, typed routing and meter shapes/expiry checked |
 | GUI wheel | Resource checks and temporary Qt-free install/removal passed |
 | Panel Python client | 34 tests passed |
-| Panel host, Omarchy reference c668141 / Quickshell 0.3.1 / Qt 6.11.2 | 12 isolated construction scenarios plus pointer/focus interaction checks passed; QML lint passed |
+| Panel host, Omarchy reference c668141 / Quickshell 0.3.1 / Qt 6.11.2 | 12 isolated construction scenarios plus four MF4/MF1/MF2/OTG pointer-interaction scenarios passed; QML lint passed |
 | Visual inspection | Synthetic OTG application and panel renders inspected; routing labels and source/mute/fader alignment checked |
 
 The GUI runner emits existing layout/teardown warnings while assertions pass;
@@ -30,10 +31,14 @@ collector was compiled and checked; it was not run against an MF1/MF2/OTG.
 No installed application, running service, driver binding or audio setting was
 changed. No firmware operation was performed.
 
-An additional earlier panel run with Quickshell 0.3.2 / Qt 6.12.0 reported
-undefined host color roles, also present in the MF4 baseline. That runtime is not
-claimed as accepted. The supported panel baseline was tested using isolated
-cached packages without changing the system. Wider host support remains open.
+The Qt 6.12 panel color-name collision has been resolved with an explicit
+Omarchy module qualifier. The panel additionally passed the same 12 construction
+and four pointer scenarios on Omarchy 4.0.6 / Quickshell 0.3.2 and
+0.3.2.r7.g2b4501a / Qt 6.12.0. The new checks include theme propagation,
+unsupported-control gates, native routing and disconnection. Runtime references
+are pinned by the panel source lock; its CI covers both Qt generations. Tests
+used isolated configurations/runtime copies and did not alter the installed
+session. This resolves that software compatibility item, not device acceptance.
 
 The expanded REA/Ghidra function analyses completed with Node 26.12.1. Their
 interactive queue later reached its idle deadline; the overall runner did not
@@ -45,3 +50,6 @@ family. In particular, USB capture, actual transfer timing, selector behavior,
 OTG second-host routing and meter channel/scale calibration remain unverified.
 GitHub Actions validates exact PR heads and additional Rust/Python/package
 combinations; a green build does not change the experimental hardware status.
+
+[Readiness](READINESS.md) lists the closed software checks and the remaining
+physical evidence. Driver simulation does not establish firmware correctness.

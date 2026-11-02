@@ -95,7 +95,7 @@ after disconnect/restart. A no-op sends no writes and creates no journal.
 `ModelProfile` is versioned presentation metadata, not permission. The static
 catalog remains conservative (`inputs_and_monitoring`). Runtime inventory uses
 `loopback_mixer` only when the advanced state is available. Unknown profiles stay
-disabled. See [IPC](../IPC.md), [software validation](VALIDATION.md) and the
+disabled. See [IPC](../IPC.md), [software validation](VALIDATION.md), [readiness](READINESS.md) and the
 [hardware acceptance checklist](TESTING.md).
 
 ## Frontend development without hardware
