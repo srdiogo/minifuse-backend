@@ -160,7 +160,7 @@ pub(crate) fn operation(state: &BasicState, op: &Operation) -> Result<Vec<BasicC
                 .find(|(n, _, _)| n == source)
                 .ok_or_else(|| Error::from("Unsupported loopback source for this model"))?;
             if db.is_some() || pan.is_some() {
-                if right.is_some() {
+                if let Some(right) = right {
                     if pan.is_some() {
                         return Err(Error::from(
                             "Stereo playback pairs do not expose a pan control",
@@ -168,7 +168,7 @@ pub(crate) fn operation(state: &BasicState, op: &Operation) -> Result<Vec<BasicC
                     }
                     let value = level(db.unwrap(), -60.0, 12.0)?;
                     add(0x600 | left, value);
-                    add(0xc00 | right.unwrap(), value);
+                    add(0xc00 | right, value);
                 } else {
                     let (old, p) = level_pan(
                         decode_db(state.word((6 + left) as usize * 2)),

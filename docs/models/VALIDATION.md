@@ -16,8 +16,9 @@ captures, real-device completion lengths or measured audio behavior.
 | Native driver, `W=1`, kernel 7.2.8-9-omarchy headers | Built; module not loaded |
 | Release service build | Passed |
 | Temporary-prefix service install, unit parsing, isolated SIGTERM cleanup and removal | Passed |
-| GUI, Python 3.14 / Qt 6.12.0, Basic and Fusion | 36 tests passed per style; QML lint passed |
+| GUI, Python 3.14 / Qt 6.12.0, Basic and Fusion | 37 tests passed per style; QML lint passed |
 | GUI native layouts | All three models rendered; stable faders on readback, firmware agreement, typed routing and meter shapes/expiry checked |
+| GUI wheel | Resource checks and temporary Qt-free install/removal passed |
 | Panel Python client | 34 tests passed |
 | Panel host, Omarchy reference c668141 / Quickshell 0.3.1 / Qt 6.11.2 | 12 isolated construction scenarios plus pointer/focus interaction checks passed; QML lint passed |
 | Visual inspection | Synthetic OTG application and panel renders inspected; routing labels and source/mute/fader alignment checked |
