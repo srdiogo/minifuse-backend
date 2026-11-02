@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 //! Continuous typed controls reuse the core's full pre-write evidence and guard.
 use super::*;
-use mf_core::{DeviceOutcome, JournalStatus, Level, Mix, Operation};
+use mf_core::{Level, Mix, Operation};
 use serde::Deserialize;
 use std::path::PathBuf;
 
@@ -91,7 +91,7 @@ pub(super) struct Control {
     pub touched: Instant,
 }
 pub(super) struct Sample {
-    plan: Plan,
+    plan: DevicePlan,
     sequence: u64,
     finish: bool,
 }
@@ -135,11 +135,7 @@ impl<H: Hardware> Coordinator<H> {
             ));
         }
         // Validate the fixed target through the core before a fresh hardware read.
-        mf_core::plan(
-            &self.devices[i].descriptor.device,
-            self.devices[i].state.as_ref().unwrap(),
-            &[p.target.operation(&json!(0))?],
-        )?;
+        self.devices[i].plan(&[p.target.operation(&json!(0))?])?;
         self.refresh()?;
         let i = self.identity(&p.device_id, &p.generation)?;
         self.revision(i, &p.expected_revision)?;
@@ -147,11 +143,7 @@ impl<H: Hardware> Coordinator<H> {
         let directory = self.paths.backups.join(format!("control-{id}"));
         storage::directory(&directory)
             .map_err(|e| ApiError::new("backup_failed", e.to_string()))?;
-        let baseline = serde_json::to_value(mf_core::Snapshot::new(
-            self.devices[i].descriptor.device.clone(),
-            self.devices[i].state.as_ref().unwrap(),
-        ))
-        .unwrap();
+        let baseline = serde_json::to_value(self.devices[i].snapshot()?).unwrap();
         storage::write_new(&directory.join("initial.json"), &baseline)
             .map_err(|e| ApiError::new("backup_failed", e.to_string()))?;
         let record = json!({"schema_version":1,"kind":"live_control","operation_id":id,"client_token":owner,"idempotency_key":p.idempotency_key,"plan_id":id,"epoch":self.epoch,"device_id":p.device_id,"generation":p.generation,"status":"pending","begin":value,"samples":[],"backup_group":directory,"device_write_attempted":false});
@@ -223,11 +215,7 @@ impl<H: Hardware> Coordinator<H> {
             ));
         }
         let i = self.identity(&c.device, &c.generation)?;
-        let plan = mf_core::plan(
-            &self.devices[i].descriptor.device,
-            self.devices[i].state.as_ref().unwrap(),
-            &[c.target.operation(&p.value)?],
-        )?;
+        let plan = self.devices[i].plan(&[c.target.operation(&p.value)?])?;
         let identity = (c.device.clone(), c.generation.clone(), c.revision.clone());
         let ready = self.refresh().and_then(|()| {
             let i = self.identity(&identity.0, &identity.1)?;
@@ -328,42 +316,21 @@ impl<H: Hardware> Coordinator<H> {
             let i = self.identity(&c.device, &c.generation)?;
             self.revision(i, &c.revision)
         });
-        let outcome = ready.and_then(|()| {
-            self.hardware
-                .execute(&sample.plan, &c.directory)
-                .map_err(ApiError::from)
-        });
+        let outcome = ready.and_then(|()| self.execute_plan(&sample.plan, &c.directory));
         let mut record = self.operations[&c.id].clone();
         record["sample_pending"] = Value::Null;
         record["sample_sequence"] = sample.sequence.into();
         let verified = match outcome {
-            Ok(o) => {
-                let verified = o.device_outcome == DeviceOutcome::Verified
-                    && o.journal_status != JournalStatus::Failed;
-                record["device_outcome"] = json!(o.device_outcome);
-                record["device_write_attempted"] =
-                    json!(if record["device_write_attempted"] == true {
-                        Some(true)
-                    } else {
-                        o.device_write_attempted
-                    });
-                record["rollback_attempted"] = o.rollback_attempted.into();
-                record["rollback_verified"] = o.rollback_verified.into();
-                record["after_state_valid"] = o.after_state.is_some().into();
-                record["state"] = o
-                    .after_state
-                    .as_ref()
-                    .map(State::decoded)
-                    .unwrap_or(Value::Null);
-                record["journal_status"] = json!(o.journal_status);
-                record["journal"] = json!(o.journal);
-                record["backup"] = json!(o.backup);
-                record["error"] = o
-                    .error
-                    .map(ApiError::from)
-                    .map(|e| e.value())
-                    .unwrap_or(Value::Null);
-                record["journal_error"] = json!(o.journal_error);
+            Ok(outcome) => {
+                let verified = outcome["device_outcome"] == "verified"
+                    && outcome["journal_status"] != "failed";
+                let already_attempted = record["device_write_attempted"] == true;
+                for (key, value) in outcome.as_object().unwrap() {
+                    record[key] = value.clone();
+                }
+                if already_attempted {
+                    record["device_write_attempted"] = true.into();
+                }
                 verified
             }
             Err(e) => {
@@ -382,9 +349,7 @@ impl<H: Hardware> Coordinator<H> {
         let event_start = self.pending_events.len();
         let refreshed = self.refresh().is_ok();
         let index = self.identity(&c.device, &c.generation).ok();
-        let matches = refreshed
-            && index
-                .is_some_and(|i| self.devices[i].state.as_ref() == Some(sample.plan.predicted()));
+        let matches = refreshed && index.is_some_and(|i| sample.plan.matches(&self.devices[i]));
         if verified && matches {
             c.revision = self.devices[index.unwrap()].revision.clone();
             for (_, event) in &mut self.pending_events[event_start..] {

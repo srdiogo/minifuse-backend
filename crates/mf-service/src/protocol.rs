@@ -232,12 +232,31 @@ fn level<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<Option<Level>, 
 fn number<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<Option<f64>, D::Error> {
     f64::deserialize(d).map(Some)
 }
+fn unsigned<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<Option<u16>, D::Error> {
+    u16::deserialize(d).map(Some)
+}
 fn flag<'de, D: Deserializer<'de>>(d: D) -> std::result::Result<Option<bool>, D::Error> {
     bool::deserialize(d).map(Some)
 }
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum WireChange {
+    LoopbackRouting {
+        #[serde(default, deserialize_with = "flag")]
+        enabled: Option<bool>,
+        #[serde(default, deserialize_with = "flag")]
+        usb12: Option<bool>,
+        #[serde(default, deserialize_with = "flag")]
+        monitor: Option<bool>,
+    },
+    OtgRouting {
+        #[serde(default, deserialize_with = "unsigned")]
+        main_to_otg: Option<u16>,
+        #[serde(default, deserialize_with = "flag")]
+        otg_to_monitor: Option<bool>,
+        #[serde(default, deserialize_with = "unsigned")]
+        meter_source: Option<u16>,
+    },
     InputSwitch {
         target: InputSwitch,
         enabled: bool,
@@ -272,6 +291,24 @@ pub enum WireChange {
 impl From<WireChange> for Operation {
     fn from(change: WireChange) -> Self {
         match change {
+            WireChange::LoopbackRouting {
+                enabled,
+                usb12,
+                monitor,
+            } => Self::LoopbackRouting {
+                enabled,
+                usb12,
+                monitor,
+            },
+            WireChange::OtgRouting {
+                main_to_otg,
+                otg_to_monitor,
+                meter_source,
+            } => Self::OtgRouting {
+                main_to_otg,
+                otg_to_monitor,
+                meter_source,
+            },
             WireChange::InputSwitch { target, enabled } => Self::InputSwitch { target, enabled },
             WireChange::Channel {
                 mix,
@@ -313,6 +350,29 @@ pub fn snapshot(content: &str) -> Result<mf_core::Snapshot> {
         serde_json::from_str(content).map_err(|e| ApiError::invalid(e.to_string()))?;
     let result: mf_core::Snapshot =
         serde_json::from_value(value).map_err(|e| ApiError::invalid(e.to_string()))?;
-    result.state().map_err(ApiError::invalid)?;
+    result.validate().map_err(ApiError::invalid)?;
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    #[test]
+    fn native_routing_fields_are_strictly_typed_and_never_accept_null() {
+        for change in [
+            json!({"kind":"loopback_routing","enabled":null}),
+            json!({"kind":"loopback_routing","monitor":1}),
+            json!({"kind":"otg_routing","main_to_otg":null}),
+            json!({"kind":"otg_routing","otg_to_monitor":null}),
+            json!({"kind":"otg_routing","meter_source":true}),
+            json!({"kind":"otg_routing","meter_source":1.5}),
+        ] {
+            assert!(serde_json::from_value::<WireChange>(change).is_err());
+        }
+        assert!(
+            serde_json::from_value::<WireChange>(json!({"kind":"otg_routing","meter_source":3}))
+                .is_ok()
+        );
+    }
 }

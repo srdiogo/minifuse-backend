@@ -144,3 +144,209 @@ free:
 	kfree(w);
 	return result;
 }
+
+/* Firmware-gated experimental hardware loopback. */
+static int mfl_wait(struct usb_device *device, struct mfl_transaction *tx, const u8 *expected,
+		    unsigned int length)
+{
+	int result, attempt;
+	u16 flags = le16_to_cpu(tx->flags) & ~MFB_AFTER_VALID;
+	tx->flags = cpu_to_le16(flags);
+	for (attempt = 0; attempt < 5; attempt++) {
+		msleep(20);
+		tx->flags = cpu_to_le16(flags);
+		result = mfb_status(device, tx->after, length);
+		if (result)
+			return result;
+		tx->flags = cpu_to_le16(flags | MFB_AFTER_VALID);
+		if (!memcmp(tx->after, expected, length))
+			return 0;
+	}
+	return -EIO;
+}
+struct mfl_work {
+	struct mfl_transaction tx;
+	u8 before[MFB_MAX_STATE], predicted[MFB_MAX_STATE];
+	__le16 originals[MFL_MAX_CHANGES];
+};
+static long mfl_apply(struct file *file, unsigned long arg)
+{
+	struct mfb_search s = {};
+	struct mfl_work *w;
+	struct mfl_transaction *tx;
+	unsigned int count, length, i, j, attempted = 0;
+	u16 pid, selector, offset, mask, value, old, flags, firmware;
+	int result, failure, undo = 0;
+	if (!(file->f_mode & FMODE_WRITE))
+		return -EACCES;
+	w = kzalloc(sizeof(*w), GFP_KERNEL);
+	if (!w)
+		return -ENOMEM;
+	tx = &w->tx;
+	if (copy_from_user(tx, (void __user *)arg, sizeof(*tx))) {
+		result = -EFAULT;
+		goto free;
+	}
+	tx->flags = 0;
+	tx->completed = 0;
+	memset(tx->after, 0, sizeof(tx->after));
+	firmware = le16_to_cpu(tx->firmware);
+	pid = le16_to_cpu(tx->product);
+	length = mfb_state_length(pid);
+	count = le16_to_cpu(tx->count);
+	if (le16_to_cpu(tx->version) != 1 || !mfl_supported(pid, firmware) || !length ||
+	    le16_to_cpu(tx->length) != length || !count || count > MFL_MAX_CHANGES ||
+	    memchr_inv(tx->expected + length, 0, MFB_MAX_STATE - length)) {
+		result = -EINVAL;
+		goto reply;
+	}
+	for (i = 0; i < count; i++) {
+		selector = le16_to_cpu(tx->changes[i].selector);
+		result =
+		    mfl_target(pid, selector, le16_to_cpu(tx->changes[i].value), &offset, &mask);
+		if (result)
+			goto reply;
+		for (j = 0; j < i; j++)
+			if (tx->changes[j].selector == tx->changes[i].selector) {
+				result = -EINVAL;
+				goto reply;
+			}
+	}
+	if (mutex_lock_interruptible(&mf4_query_mutex)) {
+		result = -ERESTARTSYS;
+		goto reply;
+	}
+	usb_for_each_dev(&s, mfb_find);
+	if (s.count != 1) {
+		result = s.device ? -EBUSY : -ENODEV;
+		goto unlock;
+	}
+	if (le16_to_cpu(s.device->descriptor.idProduct) != pid ||
+	    s.device->bus->busnum != le16_to_cpu(tx->bus) ||
+	    s.device->devnum != le16_to_cpu(tx->address)) {
+		result = -ESTALE;
+		goto unlock;
+	}
+	if (le16_to_cpu(s.device->descriptor.bcdDevice) != firmware ||
+	    !mfl_supported(pid, firmware)) {
+		result = -EPROTO;
+		goto unlock;
+	}
+	result = mfb_status(s.device, w->before, length);
+	if (result)
+		goto unlock;
+	memcpy(tx->after, w->before, length);
+	tx->flags = cpu_to_le16(MFB_AFTER_VALID);
+	if (memcmp(tx->expected, w->before, length)) {
+		result = -EAGAIN;
+		goto unlock;
+	}
+	memcpy(w->predicted, w->before, length);
+	for (i = 0; i < count; i++) {
+		selector = le16_to_cpu(tx->changes[i].selector);
+		value = le16_to_cpu(tx->changes[i].value);
+		result = mfl_target(pid, selector, value, &offset, &mask);
+		if (result)
+			goto unlock;
+		old = mf4_get_word(w->before + offset);
+		w->originals[i] = cpu_to_le16(mask ? !!(old & mask) : old);
+		if (!mask && mfl_target(pid, selector, old, &offset, &mask)) {
+			result = -EINVAL;
+			goto unlock;
+		}
+		old = mf4_get_word(w->predicted + offset);
+		mf4_put_word(!mask   ? value
+			     : value ? old | mask
+				     : old & ~mask,
+			     w->predicted + offset);
+	}
+	for (i = 0; i < count; i++) {
+		attempted = i + 1;
+		tx->flags =
+		    cpu_to_le16((le16_to_cpu(tx->flags) | MFB_WRITE_ATTEMPTED) & ~MFB_AFTER_VALID);
+		result =
+		    mf4_set(s.device, le16_to_cpu(tx->changes[i].selector), &tx->changes[i].value);
+		if (result)
+			goto rollback;
+		tx->completed = cpu_to_le16(i + 1);
+	}
+	result = mfl_wait(s.device, tx, w->predicted, length);
+	if (!result)
+		goto unlock;
+rollback:
+	failure = result;
+	tx->flags = cpu_to_le16(le16_to_cpu(tx->flags) | 1);
+	for (i = attempted; i > 0; i--) {
+		result = mf4_set(s.device, le16_to_cpu(tx->changes[i - 1].selector),
+				 &w->originals[i - 1]);
+		if (result)
+			undo = result;
+	}
+	result = mfl_wait(s.device, tx, w->before, length);
+	flags = le16_to_cpu(tx->flags);
+	if (!result && !undo)
+		flags |= 2;
+	tx->flags = cpu_to_le16(flags);
+	result = failure;
+unlock:
+	if (s.device)
+		usb_put_dev(s.device);
+	mutex_unlock(&mf4_query_mutex);
+reply:
+	if (copy_to_user((void __user *)arg, tx, sizeof(*tx)))
+		result = -EFAULT;
+free:
+	kfree(w);
+	return result;
+}
+
+static long mfl_meters(struct file *file, unsigned long arg)
+{
+	struct mfb_search s = {};
+	struct mfl_meter_record *r;
+	unsigned int length;
+	u16 pid, firmware;
+	int result;
+	if (!(file->f_mode & FMODE_READ))
+		return -EACCES;
+	r = kzalloc(sizeof(*r), GFP_KERNEL);
+	if (!r)
+		return -ENOMEM;
+	if (mutex_lock_interruptible(&mf4_query_mutex)) {
+		kfree(r);
+		return -ERESTARTSYS;
+	}
+	usb_for_each_dev(&s, mfb_find);
+	if (s.count != 1) {
+		result = s.device ? -EBUSY : -ENODEV;
+		goto done;
+	}
+	pid = le16_to_cpu(s.device->descriptor.idProduct);
+	firmware = le16_to_cpu(s.device->descriptor.bcdDevice);
+	if (!mfl_supported(pid, firmware)) {
+		result = -EPROTO;
+		goto done;
+	}
+	length = pid == 0xaf93 ? 24 : 16;
+	memcpy(r->magic, "MFLM", 4);
+	r->version = cpu_to_le16(1);
+	r->vendor = cpu_to_le16(MF4_VID);
+	r->product = cpu_to_le16(pid);
+	r->firmware = cpu_to_le16(firmware);
+	r->bus = cpu_to_le16(s.device->bus->busnum);
+	r->address = cpu_to_le16(s.device->devnum);
+	r->length = cpu_to_le16(length);
+	result = usb_control_msg(s.device, usb_rcvctrlpipe(s.device, 0), 0xc2,
+				 USB_DIR_IN | USB_TYPE_CLASS | USB_RECIP_INTERFACE, 0, 0, r->data,
+				 length, 750);
+	if (result >= 0)
+		result = result == length ? 0 : -EPROTO;
+	if (!result && copy_to_user((void __user *)arg, r, sizeof(*r)))
+		result = -EFAULT;
+done:
+	if (s.device)
+		usb_put_dev(s.device);
+	mutex_unlock(&mf4_query_mutex);
+	kfree(r);
+	return result;
+}

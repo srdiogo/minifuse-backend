@@ -65,6 +65,9 @@ impl Kernel {
 }
 impl BasicBackend for Kernel {
     fn transact_basic(&mut self, plan: &BasicPlan) -> Result<BasicState, BasicFailure> {
+        if plan.before.loopback_enabled() {
+            return self.transact_loopback(plan);
+        }
         if !self
             .module_capabilities()
             .map_err(BasicFailure::from)?

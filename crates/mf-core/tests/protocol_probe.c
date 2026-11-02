@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 #include "../../../kmod/mf4_protocol.h"
 #include "../../../kmod/mf_basic_protocol.h"
+#include "../../../kmod/mf_loopback_protocol.h"
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -20,6 +21,8 @@ int main(void)
 	static const __u16 pids[] = {0xaf80, 0xaf90, 0xaf93, 0xaf82, 0xaf92, 0xaf70, 0xaf72};
 	uint64_t basic_hash = UINT64_C(14695981039346656037);
 	__u16 offset, mask;
+	uint64_t loopback_hash = UINT64_C(14695981039346656037);
+	uint64_t firmware_hash = UINT64_C(14695981039346656037);
 
 	_Static_assert(sizeof(struct mf4_transaction) == 1032, "transaction ABI size");
 	_Static_assert(offsetof(struct mf4_transaction, after) == 838, "state offset");
@@ -34,6 +37,14 @@ int main(void)
 	_Static_assert(offsetof(struct mfb_transaction, changes) == 64, "basic changes offset");
 	_Static_assert(offsetof(struct mfb_transaction, after) == 80, "basic after offset");
 	_Static_assert(offsetof(struct mfb_transaction, flags) == 134, "basic flags offset");
+	_Static_assert(sizeof(struct mfl_transaction) == 250, "loopback transaction ABI size");
+	_Static_assert(offsetof(struct mfl_transaction, expected) == 14, "loopback expected offset");
+	_Static_assert(offsetof(struct mfl_transaction, changes) == 66, "loopback changes offset");
+	_Static_assert(offsetof(struct mfl_transaction, after) == 194, "loopback after offset");
+	_Static_assert(offsetof(struct mfl_transaction, completed) == 246, "loopback completed offset");
+	_Static_assert(offsetof(struct mfl_transaction, flags) == 248, "loopback flags offset");
+	_Static_assert(sizeof(struct mfl_meter_record) == 44, "loopback meters ABI size");
+	_Static_assert(offsetof(struct mfl_meter_record, data) == 20, "loopback meters data offset");
 	assert(mf_legacy_allowed(0xaf80, 0x0400));
 	assert(!mf_legacy_allowed(0xaf82, 0x0500));
 	assert(mf_legacy_allowed(0xaf90, 0x0400));
@@ -64,9 +75,21 @@ int main(void)
 			}
 		}
 	}
-	printf("%lu %llu %lu %lu %lu %lu %llu\n", (unsigned long)MF4_IOCTL_APPLY,
+	for (model = 0; model < sizeof(pids) / sizeof(pids[0]); model++) {
+		for (selector = 0; selector <= 0xffff; selector++) {
+			firmware_hash = fold(firmware_hash, mfl_supported(pids[model], selector));
+			for (i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
+				int accepted = mfl_target(pids[model], selector, values[i], &offset, &mask) == 0;
+				loopback_hash = fold(loopback_hash, accepted);
+				if (accepted) { loopback_hash = fold(loopback_hash, offset); loopback_hash = fold(loopback_hash, mask); }
+			}
+		}
+	}
+	printf("%lu %llu %lu %lu %lu %lu %llu %lu %lu %llu %llu\n", (unsigned long)MF4_IOCTL_APPLY,
 	       (unsigned long long)hash, (unsigned long)MF4_IOCTL_CAPABILITIES,
 	       (unsigned long)MF4_IOCTL_METERS, (unsigned long)MFB_IOCTL_STATUS,
-           (unsigned long)MFB_IOCTL_APPLY, (unsigned long long)basic_hash);
+           (unsigned long)MFB_IOCTL_APPLY, (unsigned long long)basic_hash,
+           (unsigned long)MFL_IOCTL_APPLY, (unsigned long)MFL_IOCTL_METERS,
+           (unsigned long long)loopback_hash, (unsigned long long)firmware_hash);
 	return 0;
 }

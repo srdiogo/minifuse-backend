@@ -1,0 +1,645 @@
+{
+  "devices": [
+    {
+      "device": {
+        "capabilities": {
+          "control_panel_button": false,
+          "host_snapshots": true,
+          "input_switches": true,
+          "limitations": [
+            "Model-specific basic controls are experimental and require explicit test-session enablement; mixers, signal meters and logo-button events are unavailable.",
+            "Membership is subject to the current mono/stereo topology.",
+            "Readback does not confirm nonvolatile saving."
+          ],
+          "mixer": true,
+          "mixes": [
+            {
+              "membership": [],
+              "mix": "loopback",
+              "routes": [
+                "mix"
+              ],
+              "sources": [
+                "analog1",
+                "usb12",
+                "usb34"
+              ]
+            }
+          ],
+          "signal_meters": true,
+          "switch_readback": true
+        },
+        "connection": "ready",
+        "device_id": "synthetic-mf1",
+        "firmware": {
+          "hardware_validation": "pending",
+          "loopback_compatible": true,
+          "raw_bcd": 338,
+          "required_family": "1.5.x",
+          "source": "usb_device_descriptor",
+          "version": "1.5.2"
+        },
+        "generation": "synthetic-generation",
+        "model": "MiniFuse 1",
+        "product_id": 44928,
+        "profile": {
+          "analog_inputs": 1,
+          "analog_outputs": 2,
+          "device_mode": "control",
+          "hardware_validation": "pending",
+          "id": "mf1",
+          "input_controls": [
+            {
+              "description": "Instrument mode for input 1",
+              "label": "INST 1",
+              "target": "inst1"
+            },
+            {
+              "description": "Phantom power for input 1",
+              "label": "+48 V",
+              "target": "phantom_power"
+            },
+            {
+              "description": "Direct monitoring of the physical input",
+              "label": "Direct monitor",
+              "target": "direct_monitor"
+            }
+          ],
+          "layout": "loopback_mixer",
+          "model": "MiniFuse 1",
+          "notes": [
+            "Model-specific hardware validation is pending. A presentation profile does not enable unverified USB commands.",
+            "Physical gain knobs and host software-loopback features are not remote hardware mixer controls."
+          ],
+          "schema_version": 1
+        }
+      },
+      "meters": {
+        "available": true,
+        "device_id": "synthetic-mf1",
+        "generation": "synthetic-generation",
+        "inputs_dbfs": [
+          -6.020599913279624
+        ],
+        "loopback_dbfs": [
+          -18.06179973983887,
+          -24.082399653118497
+        ],
+        "meter_layout": "minifuse-basic-c2-v1",
+        "otg_dbfs": null
+      },
+      "state": {
+        "capabilities": {
+          "control_panel_button": false,
+          "host_snapshots": true,
+          "input_switches": true,
+          "limitations": [
+            "Model-specific basic controls are experimental and require explicit test-session enablement; mixers, signal meters and logo-button events are unavailable.",
+            "Membership is subject to the current mono/stereo topology.",
+            "Readback does not confirm nonvolatile saving."
+          ],
+          "mixer": true,
+          "mixes": [
+            {
+              "membership": [],
+              "mix": "loopback",
+              "routes": [
+                "mix"
+              ],
+              "sources": [
+                "analog1",
+                "usb12",
+                "usb34"
+              ]
+            }
+          ],
+          "signal_meters": true,
+          "switch_readback": true
+        },
+        "device_id": "synthetic-mf1",
+        "generation": "synthetic-generation",
+        "revision": "synthetic-revision",
+        "state": {
+          "firmware": {
+            "hardware_validation": "pending",
+            "loopback_compatible": true,
+            "raw_bcd": 338,
+            "required_family": "1.5.x",
+            "source": "usb_device_descriptor",
+            "version": "1.5.2"
+          },
+          "inputs": {
+            "direct_monitor": false,
+            "inst1": false,
+            "phantom_power": false
+          },
+          "layout": "minifuse-basic-b2-v1",
+          "loopback": {
+            "enabled": true,
+            "monitor": false,
+            "usb12": false
+          },
+          "mixes": [
+            {
+              "channels": [
+                {
+                  "channel": "analog1",
+                  "db_left": -15.0078125,
+                  "db_right": -15.0078125,
+                  "derived_level_db": -11.997512543360187,
+                  "derived_pan": 0.5,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": true,
+                  "solo": false,
+                  "stereo_pair_included": false
+                },
+                {
+                  "channel": "usb12",
+                  "db_left": -12.0,
+                  "db_right": -12.0,
+                  "derived_level_db": -12.0,
+                  "derived_pan": null,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": false,
+                  "solo": false,
+                  "stereo_pair_included": true
+                },
+                {
+                  "channel": "usb34",
+                  "db_left": -12.0,
+                  "db_right": -12.0,
+                  "derived_level_db": -12.0,
+                  "derived_pan": null,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": false,
+                  "solo": false,
+                  "stereo_pair_included": true
+                }
+              ],
+              "master_db": -6.0,
+              "mix": "loopback",
+              "route": "mix"
+            }
+          ],
+          "model": "MiniFuse 1",
+          "otg": null
+        }
+      }
+    },
+    {
+      "device": {
+        "capabilities": {
+          "control_panel_button": false,
+          "host_snapshots": true,
+          "input_switches": true,
+          "limitations": [
+            "Model-specific basic controls are experimental and require explicit test-session enablement; mixers, signal meters and logo-button events are unavailable.",
+            "Membership is subject to the current mono/stereo topology.",
+            "Readback does not confirm nonvolatile saving."
+          ],
+          "mixer": true,
+          "mixes": [
+            {
+              "membership": [],
+              "mix": "loopback",
+              "routes": [
+                "mix"
+              ],
+              "sources": [
+                "analog1",
+                "analog2",
+                "usb12",
+                "usb34"
+              ]
+            }
+          ],
+          "signal_meters": true,
+          "switch_readback": true
+        },
+        "connection": "ready",
+        "device_id": "synthetic-mf2",
+        "firmware": {
+          "hardware_validation": "pending",
+          "loopback_compatible": true,
+          "raw_bcd": 338,
+          "required_family": "1.5.x",
+          "source": "usb_device_descriptor",
+          "version": "1.5.2"
+        },
+        "generation": "synthetic-generation",
+        "model": "MiniFuse 2",
+        "product_id": 44944,
+        "profile": {
+          "analog_inputs": 2,
+          "analog_outputs": 2,
+          "device_mode": "control",
+          "hardware_validation": "pending",
+          "id": "mf2",
+          "input_controls": [
+            {
+              "description": "Instrument mode for input 1",
+              "label": "INST 1",
+              "target": "inst1"
+            },
+            {
+              "description": "Instrument mode for input 2",
+              "label": "INST 2",
+              "target": "inst2"
+            },
+            {
+              "description": "Shared phantom power for inputs 1 and 2",
+              "label": "+48 V · 1–2",
+              "target": "phantom_power"
+            },
+            {
+              "description": "Mono summing for direct monitoring",
+              "label": "Direct mono",
+              "target": "direct_monitor"
+            }
+          ],
+          "layout": "loopback_mixer",
+          "model": "MiniFuse 2",
+          "notes": [
+            "Model-specific hardware validation is pending. A presentation profile does not enable unverified USB commands.",
+            "Physical gain knobs and host software-loopback features are not remote hardware mixer controls."
+          ],
+          "schema_version": 1
+        }
+      },
+      "meters": {
+        "available": true,
+        "device_id": "synthetic-mf2",
+        "generation": "synthetic-generation",
+        "inputs_dbfs": [
+          -6.020599913279624,
+          -12.041199826559248
+        ],
+        "loopback_dbfs": [
+          -18.06179973983887,
+          -24.082399653118497
+        ],
+        "meter_layout": "minifuse-basic-c2-v1",
+        "otg_dbfs": null
+      },
+      "state": {
+        "capabilities": {
+          "control_panel_button": false,
+          "host_snapshots": true,
+          "input_switches": true,
+          "limitations": [
+            "Model-specific basic controls are experimental and require explicit test-session enablement; mixers, signal meters and logo-button events are unavailable.",
+            "Membership is subject to the current mono/stereo topology.",
+            "Readback does not confirm nonvolatile saving."
+          ],
+          "mixer": true,
+          "mixes": [
+            {
+              "membership": [],
+              "mix": "loopback",
+              "routes": [
+                "mix"
+              ],
+              "sources": [
+                "analog1",
+                "analog2",
+                "usb12",
+                "usb34"
+              ]
+            }
+          ],
+          "signal_meters": true,
+          "switch_readback": true
+        },
+        "device_id": "synthetic-mf2",
+        "generation": "synthetic-generation",
+        "revision": "synthetic-revision",
+        "state": {
+          "firmware": {
+            "hardware_validation": "pending",
+            "loopback_compatible": true,
+            "raw_bcd": 338,
+            "required_family": "1.5.x",
+            "source": "usb_device_descriptor",
+            "version": "1.5.2"
+          },
+          "inputs": {
+            "direct_monitor": false,
+            "inst1": false,
+            "inst2": false,
+            "phantom_power": false
+          },
+          "layout": "minifuse-basic-b2-v1",
+          "loopback": {
+            "enabled": true,
+            "monitor": false,
+            "usb12": false
+          },
+          "mixes": [
+            {
+              "channels": [
+                {
+                  "channel": "analog1",
+                  "db_left": -15.0078125,
+                  "db_right": -15.0078125,
+                  "derived_level_db": -11.997512543360187,
+                  "derived_pan": 0.5,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": true,
+                  "solo": false,
+                  "stereo_pair_included": false
+                },
+                {
+                  "channel": "analog2",
+                  "db_left": -15.0078125,
+                  "db_right": -15.0078125,
+                  "derived_level_db": -11.997512543360187,
+                  "derived_pan": 0.5,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": true,
+                  "solo": false,
+                  "stereo_pair_included": false
+                },
+                {
+                  "channel": "usb12",
+                  "db_left": -12.0,
+                  "db_right": -12.0,
+                  "derived_level_db": -12.0,
+                  "derived_pan": null,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": false,
+                  "solo": false,
+                  "stereo_pair_included": true
+                },
+                {
+                  "channel": "usb34",
+                  "db_left": -12.0,
+                  "db_right": -12.0,
+                  "derived_level_db": -12.0,
+                  "derived_pan": null,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": false,
+                  "solo": false,
+                  "stereo_pair_included": true
+                }
+              ],
+              "master_db": -6.0,
+              "mix": "loopback",
+              "route": "mix"
+            }
+          ],
+          "model": "MiniFuse 2",
+          "otg": null
+        }
+      }
+    },
+    {
+      "device": {
+        "capabilities": {
+          "control_panel_button": false,
+          "host_snapshots": true,
+          "input_switches": true,
+          "limitations": [
+            "Model-specific basic controls are experimental and require explicit test-session enablement; mixers, signal meters and logo-button events are unavailable.",
+            "Membership is subject to the current mono/stereo topology.",
+            "Readback does not confirm nonvolatile saving."
+          ],
+          "mixer": true,
+          "mixes": [
+            {
+              "membership": [],
+              "mix": "loopback",
+              "routes": [
+                "mix"
+              ],
+              "sources": [
+                "analog1",
+                "analog2",
+                "usb12",
+                "usb56"
+              ]
+            }
+          ],
+          "signal_meters": true,
+          "switch_readback": true
+        },
+        "connection": "ready",
+        "device_id": "synthetic-mf2_otg",
+        "firmware": {
+          "hardware_validation": "pending",
+          "loopback_compatible": true,
+          "raw_bcd": 256,
+          "required_family": "1.0.x",
+          "source": "usb_device_descriptor",
+          "version": "1.0.0"
+        },
+        "generation": "synthetic-generation",
+        "model": "MiniFuse 2 OTG",
+        "product_id": 44947,
+        "profile": {
+          "analog_inputs": 2,
+          "analog_outputs": 2,
+          "device_mode": "control",
+          "hardware_validation": "pending",
+          "id": "mf2_otg",
+          "input_controls": [
+            {
+              "description": "Instrument mode for input 1",
+              "label": "INST 1",
+              "target": "inst1"
+            },
+            {
+              "description": "Instrument mode for input 2",
+              "label": "INST 2",
+              "target": "inst2"
+            },
+            {
+              "description": "Shared phantom power for inputs 1 and 2",
+              "label": "+48 V · 1–2",
+              "target": "phantom_power"
+            },
+            {
+              "description": "Mono summing for direct monitoring",
+              "label": "Direct mono",
+              "target": "direct_monitor"
+            }
+          ],
+          "layout": "loopback_mixer",
+          "model": "MiniFuse 2 OTG",
+          "notes": [
+            "Model-specific hardware validation is pending. A presentation profile does not enable unverified USB commands.",
+            "Physical gain knobs and host software-loopback features are not remote hardware mixer controls."
+          ],
+          "schema_version": 1
+        }
+      },
+      "meters": {
+        "available": true,
+        "device_id": "synthetic-mf2_otg",
+        "generation": "synthetic-generation",
+        "inputs_dbfs": [
+          -6.020599913279624,
+          -12.041199826559248
+        ],
+        "loopback_dbfs": [
+          -18.06179973983887,
+          -24.082399653118497
+        ],
+        "meter_layout": "minifuse-basic-c2-v1",
+        "otg_dbfs": [
+          -6.020599913279624,
+          -12.041199826559248
+        ]
+      },
+      "state": {
+        "capabilities": {
+          "control_panel_button": false,
+          "host_snapshots": true,
+          "input_switches": true,
+          "limitations": [
+            "Model-specific basic controls are experimental and require explicit test-session enablement; mixers, signal meters and logo-button events are unavailable.",
+            "Membership is subject to the current mono/stereo topology.",
+            "Readback does not confirm nonvolatile saving."
+          ],
+          "mixer": true,
+          "mixes": [
+            {
+              "membership": [],
+              "mix": "loopback",
+              "routes": [
+                "mix"
+              ],
+              "sources": [
+                "analog1",
+                "analog2",
+                "usb12",
+                "usb56"
+              ]
+            }
+          ],
+          "signal_meters": true,
+          "switch_readback": true
+        },
+        "device_id": "synthetic-mf2_otg",
+        "generation": "synthetic-generation",
+        "revision": "synthetic-revision",
+        "state": {
+          "firmware": {
+            "hardware_validation": "pending",
+            "loopback_compatible": true,
+            "raw_bcd": 256,
+            "required_family": "1.0.x",
+            "source": "usb_device_descriptor",
+            "version": "1.0.0"
+          },
+          "inputs": {
+            "direct_monitor": false,
+            "inst1": false,
+            "inst2": false,
+            "phantom_power": false
+          },
+          "layout": "minifuse-basic-b2-v1",
+          "loopback": {
+            "enabled": true,
+            "monitor": false,
+            "usb12": false
+          },
+          "mixes": [
+            {
+              "channels": [
+                {
+                  "channel": "analog1",
+                  "db_left": -15.0078125,
+                  "db_right": -15.0078125,
+                  "derived_level_db": -11.997512543360187,
+                  "derived_pan": 0.5,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": true,
+                  "solo": false,
+                  "stereo_pair_included": false
+                },
+                {
+                  "channel": "analog2",
+                  "db_left": -15.0078125,
+                  "db_right": -15.0078125,
+                  "derived_level_db": -11.997512543360187,
+                  "derived_pan": 0.5,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": true,
+                  "solo": false,
+                  "stereo_pair_included": false
+                },
+                {
+                  "channel": "usb12",
+                  "db_left": -12.0,
+                  "db_right": -12.0,
+                  "derived_level_db": -12.0,
+                  "derived_pan": null,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": false,
+                  "solo": false,
+                  "stereo_pair_included": true
+                },
+                {
+                  "channel": "usb56",
+                  "db_left": -12.0,
+                  "db_right": -12.0,
+                  "derived_level_db": -12.0,
+                  "derived_pan": null,
+                  "level_mixed": false,
+                  "mono_included": true,
+                  "mute": false,
+                  "mute_mixed": false,
+                  "pan_available": false,
+                  "solo": false,
+                  "stereo_pair_included": true
+                }
+              ],
+              "master_db": -6.0,
+              "mix": "loopback",
+              "route": "mix"
+            }
+          ],
+          "model": "MiniFuse 2 OTG",
+          "otg": {
+            "main_to_otg": 0,
+            "meter_source": 0,
+            "otg_to_monitor": false
+          }
+        }
+      }
+    }
+  ],
+  "evidence_kind": "synthetic",
+  "hardware_validation": "pending",
+  "schema_version": 1
+}

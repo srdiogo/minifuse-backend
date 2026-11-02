@@ -9,6 +9,7 @@
  */
 #include "mf4_protocol.h"
 #include "mf_basic_protocol.h"
+#include "mf_loopback_protocol.h"
 #include <linux/compat.h>
 #include <linux/delay.h>
 #include <linux/fs.h>
@@ -167,7 +168,7 @@ static long mf4_apply(struct file *file, unsigned int command, unsigned long arg
 			.magic = { 'M', 'F', '4', 'C' },
 			.version = cpu_to_le16(1),
 			.length = cpu_to_le16(sizeof(struct mf4_capabilities)),
-			.flags = cpu_to_le32(MF4_CAP_INPUT_SWITCHES | MF4_CAP_METER_QUERY | MF_CAP_BASIC_SWITCHES),
+			.flags = cpu_to_le32(MF4_CAP_INPUT_SWITCHES | MF4_CAP_METER_QUERY | MF_CAP_BASIC_SWITCHES | MF_CAP_BASIC_LOOPBACK | MF_CAP_BASIC_METERS),
 		};
 		if (!(file->f_mode & FMODE_READ))
 			return -EACCES;
@@ -179,6 +180,10 @@ static long mf4_apply(struct file *file, unsigned int command, unsigned long arg
 		return mfb_read(file, arg);
 	if (command == MFB_IOCTL_APPLY)
 		return mfb_apply(file, arg);
+	if (command == MFL_IOCTL_APPLY)
+		return mfl_apply(file, arg);
+	if (command == MFL_IOCTL_METERS)
+		return mfl_meters(file, arg);
 	if (command != MF4_IOCTL_APPLY)
 		return -ENOTTY;
 	if (!(file->f_mode & FMODE_WRITE))
@@ -449,6 +454,8 @@ static int __init mf4_init(void)
 	BUILD_BUG_ON(sizeof(struct mf4_transaction) != 1032);
 	BUILD_BUG_ON(sizeof(struct mfb_record) != 68);
 	BUILD_BUG_ON(sizeof(struct mfb_transaction) != 136);
+	BUILD_BUG_ON(sizeof(struct mfl_transaction) != 250);
+	BUILD_BUG_ON(sizeof(struct mfl_meter_record) != 44);
 	return misc_register(&mf4_misc);
 }
 

@@ -172,6 +172,8 @@ class DoctorTests(unittest.TestCase):
                 "device_ready": True,
                 "model": "MiniFuse 4",
                 "experimental": False,
+                "firmware": {},
+                "native_loopback_ready": False,
                 "verified_features": True,
             },
         )

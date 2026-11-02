@@ -19,6 +19,8 @@ pub struct Snapshot {
     pub captured_at_unix: u64,
     pub device: Device,
     pub payload_hex: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub firmware_bcd: Option<u16>,
 }
 
 impl Snapshot {
@@ -32,6 +34,64 @@ impl Snapshot {
                 .as_secs(),
             device,
             payload_hex: hex(&state.0),
+            firmware_bcd: None,
+        }
+    }
+    pub fn new_basic(device: Device, state: &crate::BasicState) -> Result<Self, String> {
+        if !state.loopback_enabled()
+            || device.vendor_id != crate::VID
+            || device.product_id != state.product_id()
+        {
+            return Err("Compatible loopback state is required for a preset".into());
+        }
+        Ok(Self {
+            schema_version: 1,
+            layout: "minifuse-basic-loopback-b2-v1".into(),
+            captured_at_unix: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+            device,
+            payload_hex: hex(state.raw()),
+            firmware_bcd: state.firmware().map(|f| f.raw_bcd),
+        })
+    }
+    pub fn basic_state(&self) -> Result<crate::BasicState, String> {
+        if self.schema_version != 1
+            || self.layout != "minifuse-basic-loopback-b2-v1"
+            || self.device.vendor_id != crate::VID
+            || !self.payload_hex.is_ascii()
+            || self.payload_hex.len() > 104
+            || self.payload_hex.len() % 2 != 0
+        {
+            return Err("Unsupported model-specific snapshot".into());
+        }
+        let firmware = self
+            .firmware_bcd
+            .and_then(crate::FirmwareVersion::from_bcd)
+            .ok_or("Snapshot firmware metadata is missing or malformed")?;
+        let bytes: Result<Vec<u8>, _> = self
+            .payload_hex
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|b| u8::from_str_radix(std::str::from_utf8(b).unwrap(), 16))
+            .collect();
+        crate::BasicState::new(self.device.product_id, &bytes.map_err(|e| e.to_string())?)
+            .and_then(|s| s.enable_loopback(firmware))
+            .map_err(|e| e.to_string())
+    }
+    pub fn validate(&self) -> Result<(), String> {
+        if self.layout == "minifuse4-b2-190-v1" {
+            self.state().map(|_| ())
+        } else {
+            self.basic_state().map(|_| ())
+        }
+    }
+    pub fn decoded(&self) -> Result<serde_json::Value, String> {
+        if self.layout == "minifuse4-b2-190-v1" {
+            self.state().map(|s| s.decoded())
+        } else {
+            self.basic_state().map(|s| s.decoded())
         }
     }
     pub fn state(&self) -> Result<State, String> {
@@ -51,7 +111,7 @@ impl Snapshot {
         }
         let snapshot: Self = serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?)
             .map_err(|e| e.to_string())?;
-        snapshot.state()?;
+        snapshot.validate()?;
         Ok(snapshot)
     }
     pub fn save(&self, path: &Path) -> Result<(), String> {

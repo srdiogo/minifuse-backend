@@ -71,15 +71,79 @@ impl DeviceState {
         }
         capabilities.input_switches &= self.state.is_some() && self.module.input_switches;
         capabilities.signal_meters &= self.state.is_some() && self.module.signal_meters;
-        if self.basic.is_some() {
+        if let Some(state) = &self.basic {
             capabilities.switch_readback = true;
             capabilities.input_switches = self.module.basic_switches;
+            if state.loopback_enabled() && self.module.basic_loopback {
+                capabilities.mixer = true;
+                capabilities.host_snapshots = true;
+                capabilities.signal_meters = self.module.basic_meters;
+                capabilities.mixes = vec![mf_core::MixCapabilities {
+                    mix: mf_core::Mix::Loopback,
+                    sources: state.loopback_sources(),
+                    routes: vec!["mix"],
+                    membership: vec![],
+                }];
+                capabilities.limitations = vec![
+                    "Experimental model-specific hardware loopback; physical acceptance pending.",
+                    "Windows SLS virtual-device mixing is not provided.",
+                    "Presets restore mapped mixer fields only; input modes and opaque words are preserved.",
+                ];
+            }
         }
         capabilities
     }
+    fn profile(&self) -> Option<mf_core::ModelProfile> {
+        let mut profile = self
+            .descriptor
+            .model
+            .profile(self.descriptor.device.product_id)?;
+        if self.basic.as_ref().is_some_and(|s| s.loopback_enabled()) && self.module.basic_loopback {
+            profile.layout = "loopback_mixer";
+        }
+        Some(profile)
+    }
+    fn plan(&self, operations: &[mf_core::Operation]) -> Result<DevicePlan> {
+        let plan = if let Some(state) = &self.basic {
+            DevicePlan::Basic(mf_core::plan_basic(
+                &self.descriptor.device,
+                state,
+                operations,
+            )?)
+        } else {
+            DevicePlan::Mixer(Box::new(mf_core::plan(
+                &self.descriptor.device,
+                self.state.as_ref().ok_or_else(|| {
+                    ApiError::new(
+                        "unsupported_capability",
+                        "Confirmed mixer state is unavailable",
+                    )
+                })?,
+                operations,
+            )?))
+        };
+        self.validate_plan(&plan)?;
+        Ok(plan)
+    }
+    fn snapshot(&self) -> Result<mf_core::Snapshot> {
+        if let Some(state) = &self.basic {
+            mf_core::Snapshot::new_basic(self.descriptor.device.clone(), state)
+                .map_err(|e| ApiError::new("unsupported_capability", e))
+        } else {
+            Ok(mf_core::Snapshot::new(
+                self.descriptor.device.clone(),
+                self.state.as_ref().ok_or_else(|| {
+                    ApiError::new("unsupported_capability", "Mixer snapshots are unavailable")
+                })?,
+            ))
+        }
+    }
     fn validate_plan(&self, plan: &DevicePlan) -> Result<()> {
-        if let DevicePlan::Basic(_) = plan {
-            return if self.basic.is_some() && self.capabilities().input_switches {
+        if let DevicePlan::Basic(p) = plan {
+            return if self.basic.is_some()
+                && (!p.requires_input_switches() || self.capabilities().input_switches)
+                && (!p.before().loopback_enabled() || self.capabilities().mixer)
+            {
                 Ok(())
             } else {
                 Err(ApiError::new(
@@ -110,6 +174,12 @@ impl DevicePlan {
         match self {
             Self::Mixer(p) => p.predicted().decoded(),
             Self::Basic(p) => p.predicted().decoded(),
+        }
+    }
+    fn matches(&self, device: &DeviceState) -> bool {
+        match self {
+            Self::Mixer(p) => device.state.as_ref() == Some(p.predicted()),
+            Self::Basic(p) => device.basic.as_ref() == Some(p.predicted()),
         }
     }
     fn summary(&self) -> Value {
@@ -302,6 +372,20 @@ impl<H: Hardware> Coordinator<H> {
             }
             let id = d.id.clone();
             let generation = d.generation.clone();
+            if d.basic.is_some() {
+                let descriptor = d.descriptor.clone();
+                let data = match self.hardware.model_meters(&descriptor) {
+                    Ok(meters) => {
+                        json!({"device_id":id,"generation":generation,"available":true,"meter_layout":"minifuse-basic-c2-v1","inputs_dbfs":meters.inputs_dbfs,"loopback_dbfs":meters.loopback_dbfs,"otg_dbfs":meters.otg_dbfs})
+                    }
+                    Err(error) => {
+                        self.devices[i].meter_retry = Instant::now() + Duration::from_secs(1);
+                        json!({"device_id":id,"generation":generation,"available":false,"error":error.value()})
+                    }
+                };
+                self.emit("meters_updated", Some(&id), data);
+                continue;
+            }
             let result = self.hardware.meters();
             let data = match result {
                 Ok((device, meters)) if device == self.devices[i].descriptor.device => {
@@ -332,7 +416,7 @@ impl<H: Hardware> Coordinator<H> {
         }
     }
     fn inventory(&self) -> Value {
-        Value::Array(self.devices.iter().map(|d|json!({"device_id":d.id,"generation":d.generation,"model":d.descriptor.model.name(),"product_id":d.descriptor.device.product_id,"profile":d.descriptor.model.profile(d.descriptor.device.product_id),"connection":if d.state.is_some()||d.basic.is_some(){"ready"}else{"unavailable"},"capabilities":d.capabilities(),"error":d.error.as_ref().map(ApiError::value)})).collect())
+        Value::Array(self.devices.iter().map(|d|json!({"device_id":d.id,"generation":d.generation,"model":d.descriptor.model.name(),"product_id":d.descriptor.device.product_id,"profile":d.profile(),"firmware":mf_core::firmware_status(d.descriptor.device.product_id,d.descriptor.firmware),"connection":if d.state.is_some()||d.basic.is_some(){"ready"}else{"unavailable"},"capabilities":d.capabilities(),"error":d.error.as_ref().map(ApiError::value)})).collect())
     }
     fn state_value(&self, index: usize) -> Result<Value> {
         let d = &self.devices[index];
@@ -430,7 +514,7 @@ impl<H: Hardware> Coordinator<H> {
                 self.devices[i].descriptor.device.product_id,
                 0xaf80 | 0xaf90 | 0xaf93
             ) {
-                let descriptor = self.devices[i].descriptor.device.clone();
+                let descriptor = self.devices[i].descriptor.clone();
                 let result = self
                     .hardware
                     .read_basic(&descriptor)
@@ -441,9 +525,12 @@ impl<H: Hardware> Coordinator<H> {
                     });
                 match result {
                     Ok((device, state, module))
-                        if device == descriptor
+                        if device == descriptor.device
                             && state.product_id() == device.product_id
-                            && module.basic_switches =>
+                            && module.basic_switches
+                            && (!state.loopback_enabled()
+                                || (module.basic_loopback
+                                    && state.firmware() == descriptor.firmware)) =>
                     {
                         let changed = self.devices[i].basic.as_ref() != Some(&state);
                         let recovered = self.devices[i].error.is_some();
@@ -707,24 +794,7 @@ impl<H: Hardware> Coordinator<H> {
                 self.revision(i, &p.expected_revision)?;
                 let operations: Vec<_> = p.changes.into_iter().map(Into::into).collect();
                 let d = &self.devices[i];
-                let plan = if let Some(state) = &d.basic {
-                    DevicePlan::Basic(mf_core::plan_basic(
-                        &d.descriptor.device,
-                        state,
-                        &operations,
-                    )?)
-                } else {
-                    DevicePlan::Mixer(Box::new(mf_core::plan(
-                        &d.descriptor.device,
-                        d.state.as_ref().ok_or_else(|| {
-                            ApiError::new(
-                                "unsupported_capability",
-                                "No confirmed mixer state for this model",
-                            )
-                        })?,
-                        &operations,
-                    )?))
-                };
+                let plan = d.plan(&operations)?;
                 self.refresh()?;
                 let i = self.identity(&p.device_id, &p.generation)?;
                 self.revision(i, &p.expected_revision)?;
@@ -736,21 +806,27 @@ impl<H: Hardware> Coordinator<H> {
                 let i = self.identity(&p.device_id, &p.generation)?;
                 self.revision(i, &p.revision)?;
                 let d = &self.devices[i];
-                let plan = mf_core::plan_restore(
-                    &d.descriptor.device,
-                    d.state.as_ref().ok_or_else(|| {
-                        ApiError::new(
-                            "unsupported_capability",
-                            "Mixer preset restore is unavailable for this model",
-                        )
-                    })?,
-                    &snapshot,
-                    p.mix,
-                )?;
+                let plan = if let Some(state) = &d.basic {
+                    DevicePlan::Basic(mf_core::plan_basic_restore(
+                        &d.descriptor.device,
+                        state,
+                        &snapshot,
+                        p.mix,
+                    )?)
+                } else {
+                    DevicePlan::Mixer(Box::new(mf_core::plan_restore(
+                        &d.descriptor.device,
+                        d.state.as_ref().ok_or_else(|| {
+                            ApiError::new("unsupported_capability", "Mixer restore is unavailable")
+                        })?,
+                        &snapshot,
+                        p.mix,
+                    )?))
+                };
                 self.refresh()?;
                 let i = self.identity(&p.device_id, &p.generation)?;
                 self.revision(i, &p.revision)?;
-                self.propose(&owner, i, DevicePlan::Mixer(Box::new(plan)))
+                self.propose(&owner, i, plan)
             }
             "apply_plan" => {
                 let p: protocol::Apply = protocol::params(value)?;
@@ -784,14 +860,14 @@ impl<H: Hardware> Coordinator<H> {
                 let i = self.identity(&p.device_id, &p.generation)?;
                 let d = &self.devices[i];
                 Ok(
-                    json!({"snapshot":serde_json::to_string_pretty(&mf_core::Snapshot::new(d.descriptor.device.clone(),d.state.as_ref().ok_or_else(||ApiError::new("unsupported_capability","Mixer snapshots are unavailable for this model"))?)).map_err(|e|ApiError::invalid(e.to_string()))?}),
+                    json!({"snapshot":serde_json::to_string_pretty(&d.snapshot()?).map_err(|e|ApiError::invalid(e.to_string()))?}),
                 )
             }
             "inspect_snapshot" => {
                 let p: protocol::Content = protocol::params(value)?;
                 let s = protocol::snapshot(&p.snapshot)?;
                 Ok(
-                    json!({"schema_version":s.schema_version,"layout":s.layout,"model":"MiniFuse 4","state":s.state().map_err(ApiError::invalid)?.decoded(),"capabilities":Model::MiniFuse4.capabilities()}),
+                    json!({"schema_version":s.schema_version,"layout":s.layout,"model":Model::from_pid(s.device.product_id).map(|m|m.name()),"state":s.decoded().map_err(ApiError::invalid)?,"capabilities":Model::from_pid(s.device.product_id).map(|m|m.capabilities())}),
                 )
             }
             "list_presets" => {
@@ -812,7 +888,13 @@ impl<H: Hardware> Coordinator<H> {
                         continue;
                     }
                     let v = storage::read(&path).map_err(|e| ApiError::invalid(e.to_string()))?;
-                    presets.push(json!({"preset_id":v["preset_id"],"name":v["name"],"model":"MiniFuse 4","schema_version":1}));
+                    let model = v["snapshot"]
+                        .as_str()
+                        .and_then(|s| protocol::snapshot(s).ok())
+                        .and_then(|s| Model::from_pid(s.device.product_id))
+                        .map(|m| m.name())
+                        .unwrap_or("Unknown");
+                    presets.push(json!({"preset_id":v["preset_id"],"name":v["name"],"model":model,"schema_version":1}));
                 }
                 Ok(json!({"presets":presets}))
             }
@@ -945,6 +1027,19 @@ impl<H: Hardware> Coordinator<H> {
         });
         Ok(public_operation(&record))
     }
+    fn execute_plan(&mut self, plan: &DevicePlan, directory: &std::path::Path) -> Result<Value> {
+        match plan {
+            DevicePlan::Mixer(p) => self
+                .hardware
+                .execute(p, directory)
+                .map(|o| outcome_value!(o)),
+            DevicePlan::Basic(p) => self
+                .hardware
+                .execute_basic(p, directory)
+                .map(|o| outcome_value!(o)),
+        }
+        .map_err(ApiError::from)
+    }
     pub fn execute_next(&mut self) {
         if self.live_work.is_some() {
             self.execute_control();
@@ -969,19 +1064,8 @@ impl<H: Hardware> Coordinator<H> {
             self.revision(index, &proposal.revision)?;
             self.devices[index].validate_plan(&proposal.plan)
         });
-        let outcome = ready.and_then(|()| {
-            match &proposal.plan {
-                DevicePlan::Mixer(plan) => self
-                    .hardware
-                    .execute(plan, &self.paths.backups)
-                    .map(|outcome| outcome_value!(outcome)),
-                DevicePlan::Basic(plan) => self
-                    .hardware
-                    .execute_basic(plan, &self.paths.backups)
-                    .map(|outcome| outcome_value!(outcome)),
-            }
-            .map_err(ApiError::from)
-        });
+        let directory = self.paths.backups.clone();
+        let outcome = ready.and_then(|()| self.execute_plan(&proposal.plan, &directory));
         record["status"] = "completed".into();
         match outcome {
             Ok(outcome) => {

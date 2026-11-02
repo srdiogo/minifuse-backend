@@ -5,6 +5,9 @@ mod basic;
 mod basic_transport;
 mod config;
 mod error;
+mod firmware;
+mod loopback;
+mod loopback_transport;
 mod meters;
 mod mixer;
 mod model;
@@ -17,6 +20,8 @@ pub use basic::{
 };
 pub use config::{Snapshot, default_backup_dir};
 pub use error::{Error, ErrorKind};
+pub use firmware::{FirmwareVersion, firmware_status};
+pub use loopback::{LoopbackRouting, ModelMeters, plan_basic_restore};
 pub use meters::Meters;
 pub use model::{MF2_OTG_PID, MF4_PID, Model, VID};
 pub use profiles::{DeviceMode, InputControl, ModelProfile};
@@ -78,6 +83,16 @@ pub enum InputSwitch {
 
 #[derive(Clone, Debug)]
 pub enum Operation {
+    LoopbackRouting {
+        enabled: Option<bool>,
+        usb12: Option<bool>,
+        monitor: Option<bool>,
+    },
+    OtgRouting {
+        main_to_otg: Option<u16>,
+        otg_to_monitor: Option<bool>,
+        meter_source: Option<u16>,
+    },
     InputSwitch {
         target: InputSwitch,
         enabled: bool,
@@ -247,6 +262,12 @@ pub fn plan(device: &Device, before: &State, operations: &[Operation]) -> Result
     let mut changes = Vec::new();
     for operation in operations {
         changes.extend(match operation {
+            Operation::LoopbackRouting { .. } | Operation::OtgRouting { .. } => {
+                return Err(Error::new(
+                    ErrorKind::UnsupportedCapability,
+                    "This operation requires a model-specific loopback layout",
+                ));
+            }
             Operation::InputSwitch { target, enabled } => vec![state::Change {
                 selector: match target {
                     InputSwitch::Inst1 => 0,

@@ -64,7 +64,7 @@ checksum together; a checksum checks integrity against that published file.
 | Area | Current status |
 |---|---|
 | MiniFuse 4 | Mixer, routes, input switches and meters have bounded hardware validation |
-| MiniFuse 1 / 2 / 2 OTG | Automatic model layouts; experimental INST, +48 V and direct monitor/mono controls, disabled by default pending hardware tests |
+| MiniFuse 1 / 2 / 2 OTG | Automatic layouts; experimental inputs, native loopback mixer/routing/meters and host presets, gated by firmware and explicit opt-in; hardware tests pending |
 | Arch Linux x86_64 | Native packages and complete installation kit available |
 | Omarchy | Optional panel; tested host versions are recorded in the desktop source lock |
 | Ubuntu / Debian / Fedora | Native distribution packages planned; current installer does not support them |

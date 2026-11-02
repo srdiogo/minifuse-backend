@@ -1,37 +1,46 @@
-# Model-controls software validation
+# Experimental model software validation
 
-Recorded on 2026-11-01. MF1/MF2/OTG hardware acceptance remains pending.
+Recorded on 2026-11-01. Physical acceptance remains pending separately for MF1,
+MF2 and MF2 OTG. This report describes software/static checks, not hardware
+captures, real-device completion lengths or measured audio behavior.
 
 | Check | Result |
 |---|---|
-| Rust 1.85.1 workspace tests | 65 passed, including 3 basic-model service scenarios |
-| C/Rust ABI and allowlist comparison | Passed; fixed 68-byte status and 136-byte transaction records |
+| Rust 1.85.1 workspace | 73 tests passed, including five basic/native-model service scenarios |
+| C/Rust protocol agreement | Passed: old and additive ioctl sizes/offsets, selector/value decisions and every 16-bit firmware descriptor across normal, initialization and unsupported model IDs |
+| Firmware policy | Missing/malformed/old/unreviewed versions blocked; model-specific families, descriptor agreement and stale-plan invalidation tested |
+| Native core | Synthetic gain/pan/mute/master/routing, model source groups, opaque-byte preservation, scoped snapshot restore and meter decoder checked |
+| Native service | Continuous controls, preset capture/restore planning, meter events, module gates and firmware-change invalidation checked with synthetic hardware |
 | Clippy, all targets, warnings denied | Passed |
-| Installer/package/diagnostic tests | Passed |
-| Native driver, `W=1`, kernel 7.2.8-9-omarchy headers | Built; module was not loaded |
+| Installer/package/diagnostic tests | 20 passed |
+| Native driver, `W=1`, kernel 7.2.8-9-omarchy headers | Built; module not loaded |
 | Release service build | Passed |
-| Temporary-prefix service install, unit parsing, SIGTERM cleanup and removal | Passed |
-| GUI, Python 3.14 / Qt 6.12.0, Basic and Fusion styles | 29 tests passed per style; QML lint passed |
-| GUI wheel resources and temporary install/removal without Qt | Passed; includes ModelPage.qml |
-| Panel client tests | 32 passed |
-| Panel host baseline, Omarchy reference c668141 / Quickshell 0.3.1 / Qt 6.11.2 | QML lint, 9 construction scenarios and pointer interaction checks passed |
+| Temporary-prefix service install, unit parsing, isolated SIGTERM cleanup and removal | Passed |
+| GUI, Python 3.14 / Qt 6.12.0, Basic and Fusion | 36 tests passed per style; QML lint passed |
+| GUI native layouts | All three models rendered; stable faders on readback, firmware agreement, typed routing and meter shapes/expiry checked |
+| Panel Python client | 34 tests passed |
+| Panel host, Omarchy reference c668141 / Quickshell 0.3.1 / Qt 6.11.2 | 12 isolated construction scenarios plus pointer/focus interaction checks passed; QML lint passed |
+| Visual inspection | Synthetic OTG application and panel renders inspected; routing labels and source/mute/fader alignment checked |
 
-The presentation fixture is synthetic. New-model tests do not replay a real
-MF1/MF2/OTG USB capture. The status capture example was compiled and checked;
-it was not run against a physical interface. No installed application, running
-service, driver binding or audio setting was changed during this work.
+The GUI runner emits existing layout/teardown warnings while assertions pass;
+these checks do not claim a warning-free runtime. Native fixtures are generated
+by `loopback_fixture` without a device/socket. The `basic_status` read-only
+collector was compiled and checked; it was not run against an MF1/MF2/OTG.
+No installed application, running service, driver binding or audio setting was
+changed. No firmware operation was performed.
 
-The GUI test runner emitted layout/teardown warnings while its assertions passed;
-these results do not claim warning-free runtime acceptance. Visual inspection
-covered the basic model page at the minimum supported window size.
+An additional earlier panel run with Quickshell 0.3.2 / Qt 6.12.0 reported
+undefined host color roles, also present in the MF4 baseline. That runtime is not
+claimed as accepted. The supported panel baseline was tested using isolated
+cached packages without changing the system. Wider host support remains open.
 
-An additional panel run with the machine's newer Quickshell 0.3.2 / Qt 6.12.0
-reported undefined host color roles. The same failure occurred in the existing
-MF4 construction scenario; it is not a successful acceptance result for that
-runtime. The supported host baseline was tested separately using isolated cached
-runtime packages, without changing the system. Wider host-version support still
-requires investigation and must not be inferred from these model tests.
+The expanded REA/Ghidra function analyses completed with Node 26.12.1. Their
+interactive queue later reached its idle deadline; the overall runner did not
+exit cleanly. The individual results and unchanged target hash are documented
+in [evidence](EVIDENCE.md), without distributing proprietary inputs/results.
 
-Follow [the hardware checklist](TESTING.md) before promoting any new model from
-experimental status. GitHub Actions checks apply to the exact PR head and may
-cover additional Python, Rust and packaging environments.
+Follow [hardware acceptance](TESTING.md) before promoting any model or firmware
+family. In particular, USB capture, actual transfer timing, selector behavior,
+OTG second-host routing and meter channel/scale calibration remain unverified.
+GitHub Actions validates exact PR heads and additional Rust/Python/package
+combinations; a green build does not change the experimental hardware status.

@@ -44,6 +44,8 @@ pub struct ModuleCapabilities {
     pub input_switches: bool,
     pub signal_meters: bool,
     pub basic_switches: bool,
+    pub basic_loopback: bool,
+    pub basic_meters: bool,
 }
 impl ModuleCapabilities {
     fn decode(data: &[u8]) -> Result<Self, Error> {
@@ -62,6 +64,8 @@ impl ModuleCapabilities {
             input_switches: data[8] & 1 != 0,
             signal_meters: data[8] & 2 != 0,
             basic_switches: data[8] & 4 != 0,
+            basic_loopback: data[8] & 8 != 0,
+            basic_meters: data[8] & 16 != 0,
         })
     }
 }

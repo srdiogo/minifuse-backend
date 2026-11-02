@@ -12,7 +12,8 @@ and the Omarchy plugin are optional separate applications.
 This is a development preview. The packaged target is Arch Linux x86_64 and the
 recorded desktop baseline is Omarchy 4.0.4, Quickshell 0.3.1 and Qt 6.11.2.
 MiniFuse 4 has bounded hardware validation. MF1/MF2/2 OTG have model-specific
-experimental input controls and layouts, disabled by default; follow
+experimental inputs, native loopback mixer/routing/meters and host presets,
+with model-specific firmware checks and disabled by default; follow
 [model testing](models/TESTING.md) for deliberate opt-in acceptance. They never
 receive the MF4 mixer or meter layout. A new kernel, host or device combination
 still needs its own acceptance check.

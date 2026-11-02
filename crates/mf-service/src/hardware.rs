@@ -8,11 +8,12 @@ pub struct Descriptor {
     pub device: Device,
     pub model: Model,
     pub connection_marker: u64,
+    pub firmware: Option<mf_core::FirmwareVersion>,
 }
 pub trait Hardware: Send + 'static {
     fn inventory(&mut self) -> Result<Vec<Descriptor>>;
     fn read(&mut self) -> Result<(Device, State)>;
-    fn read_basic(&mut self, _device: &Device) -> Result<(Device, mf_core::BasicState)> {
+    fn read_basic(&mut self, _descriptor: &Descriptor) -> Result<(Device, mf_core::BasicState)> {
         Err(ApiError::new(
             "unsupported_capability",
             "Model-specific switch validation is pending; experimental basic transport is disabled",
@@ -37,23 +38,44 @@ pub trait Hardware: Send + 'static {
             "Signal meters unavailable",
         ))
     }
+    fn model_meters(&mut self, _descriptor: &Descriptor) -> Result<mf_core::ModelMeters> {
+        Err(ApiError::new(
+            "unsupported_capability",
+            "Model-specific meters unavailable",
+        ))
+    }
     fn execute(
         &mut self,
         plan: &Plan,
         backups: &Path,
     ) -> std::result::Result<Outcome, mf_core::Error>;
 }
+fn experimental_enabled() -> bool {
+    std::env::var("MF_SERVICE_EXPERIMENTAL_BASIC").as_deref() == Ok("1")
+        || std::env::var("MF_SERVICE_EXPERIMENTAL_LOOPBACK").as_deref() == Ok("1")
+}
 pub struct Linux;
 impl Hardware for Linux {
-    fn read_basic(&mut self, device: &Device) -> Result<(Device, mf_core::BasicState)> {
-        if std::env::var("MF_SERVICE_EXPERIMENTAL_BASIC").as_deref() != Ok("1") {
+    fn read_basic(&mut self, descriptor: &Descriptor) -> Result<(Device, mf_core::BasicState)> {
+        if !experimental_enabled() {
             return Err(ApiError::new(
                 "unsupported_capability",
                 "This model's hardware validation is pending. Experimental basic controls require an explicitly enabled test session.",
             ));
         }
-        let result = Kernel::open(false)?.read_basic()?;
-        if result.0 != *device {
+        let kernel = Kernel::open(false)?;
+        let mut result = kernel.read_basic()?;
+        if std::env::var("MF_SERVICE_EXPERIMENTAL_LOOPBACK").as_deref() == Ok("1")
+            && kernel.module_capabilities()?.basic_loopback
+        {
+            if let Some(firmware) = descriptor
+                .firmware
+                .filter(|f| f.supports_loopback(descriptor.device.product_id))
+            {
+                result.1 = result.1.enable_loopback(firmware)?;
+            }
+        }
+        if result.0 != descriptor.device {
             return Err(ApiError::new(
                 "device_changed",
                 "Basic readback belongs to a different interface",
@@ -66,13 +88,32 @@ impl Hardware for Linux {
         plan: &mf_core::BasicPlan,
         backups: &Path,
     ) -> std::result::Result<mf_core::BasicOutcome, mf_core::Error> {
-        if std::env::var("MF_SERVICE_EXPERIMENTAL_BASIC").as_deref() != Ok("1") {
+        if !experimental_enabled()
+            || (plan.before().loopback_enabled()
+                && std::env::var("MF_SERVICE_EXPERIMENTAL_LOOPBACK").as_deref() != Ok("1"))
+        {
             return Err(mf_core::Error::new(
                 mf_core::ErrorKind::UnsupportedCapability,
                 "Experimental basic controls are disabled",
             ));
         }
         mf_core::execute_basic(&mut Kernel::open(true)?, plan, backups)
+    }
+    fn model_meters(&mut self, descriptor: &Descriptor) -> Result<mf_core::ModelMeters> {
+        if std::env::var("MF_SERVICE_EXPERIMENTAL_LOOPBACK").as_deref() != Ok("1") {
+            return Err(ApiError::new(
+                "unsupported_capability",
+                "Experimental loopback meters are disabled",
+            ));
+        }
+        let (device, firmware, meters) = Kernel::open(false)?.model_meters()?;
+        if device != descriptor.device || Some(firmware) != descriptor.firmware {
+            return Err(ApiError::new(
+                "device_changed",
+                "Meter identity or firmware changed",
+            ));
+        }
+        Ok(meters)
     }
     fn inventory(&mut self) -> Result<Vec<Descriptor>> {
         let entries = fs::read_dir("/sys/bus/usb/devices")
@@ -106,6 +147,7 @@ impl Hardware for Linux {
                 },
                 model,
                 connection_marker: fs::metadata(&path).map(|m| m.ino()).unwrap_or(0),
+                firmware: read("bcdDevice", 16).and_then(mf_core::FirmwareVersion::from_bcd),
             });
         }
         result.sort_by_key(|d| (d.device.bus, d.device.address));

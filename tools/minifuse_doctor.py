@@ -92,6 +92,16 @@ def inventory_summary(devices):
         if pid == 0xAF70
         else ("switch_readback", "input_switches")
     )
+    firmware = selected.get("firmware", {})
+    firmware = (
+        {
+            k: firmware[k]
+            for k in ("version", "raw_bcd", "loopback_compatible", "required_family")
+            if k in firmware
+        }
+        if isinstance(firmware, dict)
+        else {}
+    )
     return {
         "api_major": 1,
         "device_count": len(devices),
@@ -99,6 +109,11 @@ def inventory_summary(devices):
         "device_ready": ready,
         "model": names.get(pid, "Unavailable or initialization mode"),
         "experimental": pid in (0xAF80, 0xAF90, 0xAF93),
+        "firmware": firmware,
+        "native_loopback_ready": ready
+        and isinstance(capabilities, dict)
+        and capabilities.get("mixer") is True
+        and pid in (0xAF80, 0xAF90, 0xAF93),
         "verified_features": ready
         and isinstance(capabilities, dict)
         and all(capabilities.get(name) is True for name in features),
@@ -170,6 +185,19 @@ def diagnose(root=Path("/"), env=None, uid=None, kernel=None, no_service=False):
                 "The selected model must advertise its implemented readback/control features",
             )
             if result["experimental"]:
+                firmware = (
+                    result["firmware"] if isinstance(result["firmware"], dict) else {}
+                )
+                add(
+                    "loopback_compatibility",
+                    result["native_loopback_ready"],
+                    "Native loopback: firmware "
+                    + str(firmware.get("version") or "unknown")
+                    + "; experimental family "
+                    + str(firmware.get("required_family") or "unknown")
+                    + "; matching module and explicit loopback opt-in required",
+                    False,
+                )
                 add(
                     "hardware_validation",
                     False,

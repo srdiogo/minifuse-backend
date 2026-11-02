@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-//! Experimental MF1/MF2/OTG switches, isolated from the validated MF4 layout.
+//! Experimental MF1/MF2/OTG state and transactions, isolated from the MF4 layout.
 use crate::{
     Device, DeviceOutcome, Error, ErrorKind, InputSwitch, JournalStatus, Model, Operation, config,
     hex,
@@ -13,7 +13,7 @@ use std::{
 };
 
 pub const BASIC_MAX_STATE: usize = 52;
-pub const BASIC_MAX_CHANGES: usize = 4;
+pub const BASIC_MAX_CHANGES: usize = 32;
 
 pub fn state_length(pid: u16) -> Option<usize> {
     match pid {
@@ -46,6 +46,7 @@ pub fn target(pid: u16, selector: u16, value: u16) -> Result<(usize, u16), Error
 pub struct BasicState {
     pub(crate) pid: u16,
     pub(crate) data: Vec<u8>,
+    pub(crate) firmware: Option<crate::FirmwareVersion>,
 }
 impl BasicState {
     pub fn new(pid: u16, bytes: &[u8]) -> Result<Self, Error> {
@@ -58,6 +59,7 @@ impl BasicState {
         Ok(Self {
             pid,
             data: bytes.to_vec(),
+            firmware: None,
         })
     }
     pub fn raw(&self) -> &[u8] {
@@ -72,7 +74,13 @@ impl BasicState {
         if self.pid != 0xaf80 {
             inputs["inst2"] = json!(word(0) & 2 != 0);
         }
-        json!({"model":Model::from_pid(self.pid).unwrap().name(),"layout":"minifuse-basic-b2-v1","inputs":inputs,"mixes":[]})
+        let mut result = json!({"model":Model::from_pid(self.pid).unwrap().name(),"layout":"minifuse-basic-b2-v1","inputs":inputs,"mixes":[]});
+        if self.loopback_enabled() {
+            for (key, value) in self.loopback_view().as_object().unwrap() {
+                result[key] = value.clone();
+            }
+        }
+        result
     }
 }
 
@@ -98,6 +106,11 @@ impl BasicPlan {
     pub fn predicted(&self) -> &BasicState {
         &self.predicted
     }
+    pub fn requires_input_switches(&self) -> bool {
+        self.changes
+            .iter()
+            .any(|c| matches!(c.selector, 0 | 1 | 0x400 | 0x500))
+    }
     pub fn summary(&self) -> Value {
         json!({"layout":"minifuse-basic-b2-v1","usb_write_count":self.changes.len(),"changes":self.changes,"predicted_after_hex":hex(&self.predicted.data),"hardware_validation":"pending"})
     }
@@ -117,42 +130,87 @@ pub fn plan_basic(
             "Basic state does not match the normal-mode device",
         ));
     }
-    if operations.is_empty() || operations.len() > BASIC_MAX_CHANGES {
-        return Err(Error::from("Expected one to four switch operations"));
+    let limit = if before.loopback_enabled() {
+        BASIC_MAX_CHANGES
+    } else {
+        4
+    };
+    if operations.is_empty() || operations.len() > limit {
+        return Err(Error::from("Invalid model-specific operation count"));
     }
-    let mut predicted = before.clone();
     let mut changes = Vec::new();
-    let mut seen = Vec::new();
     for operation in operations {
-        let Operation::InputSwitch {
+        if let Operation::InputSwitch {
             target: control,
             enabled,
         } = operation
-        else {
-            return Err(Error::new(
-                ErrorKind::UnsupportedCapability,
-                "Only model-specific input/monitor switches are available in this experimental path",
-            ));
-        };
-        let selector = match control {
-            InputSwitch::Inst1 => 0,
-            InputSwitch::Inst2 => 1,
-            InputSwitch::PhantomPower => 0x0400,
-            InputSwitch::DirectMonitor => 0x0500,
-        };
-        let (offset, mask) = target(before.pid, selector, u16::from(*enabled))?;
-        if seen.contains(&selector) {
-            return Err(Error::from("Duplicate switch target"));
-        }
-        seen.push(selector);
-        let old = u16::from_le_bytes([predicted.data[offset], predicted.data[offset + 1]]);
-        let new = if *enabled { old | mask } else { old & !mask };
-        predicted.data[offset..offset + 2].copy_from_slice(&new.to_le_bytes());
-        if new != old {
+        {
+            let selector = match control {
+                InputSwitch::Inst1 => 0,
+                InputSwitch::Inst2 => 1,
+                InputSwitch::PhantomPower => 0x0400,
+                InputSwitch::DirectMonitor => 0x0500,
+            };
             changes.push(BasicChange {
                 selector,
                 value: u16::from(*enabled),
             });
+        } else {
+            changes.extend(crate::loopback::operation(before, operation)?);
+        }
+    }
+    from_changes(device, before, changes)
+}
+
+pub(crate) fn from_changes(
+    device: &Device,
+    before: &BasicState,
+    requested: Vec<BasicChange>,
+) -> Result<BasicPlan, Error> {
+    if device.vendor_id != crate::VID
+        || device.product_id != before.pid
+        || state_length(before.pid).is_none()
+    {
+        return Err(Error::from("State/device identity mismatch"));
+    }
+    let limit = if before.loopback_enabled() {
+        BASIC_MAX_CHANGES
+    } else {
+        4
+    };
+    if requested.len() > limit {
+        return Err(Error::from("Too many model-specific changes"));
+    }
+    let mut predicted = before.clone();
+    let mut changes = Vec::new();
+    let mut seen = Vec::new();
+    for change in requested {
+        let (offset, mask) = if before.loopback_enabled() {
+            crate::loopback::target(before.pid, change.selector, change.value)?
+        } else {
+            target(before.pid, change.selector, change.value)?
+        };
+        if seen.contains(&change.selector) {
+            return Err(Error::from("Duplicate model-specific target"));
+        }
+        seen.push(change.selector);
+        let old = predicted.word(offset);
+        let new = if mask == 0 {
+            change.value
+        } else if change.value != 0 {
+            old | mask
+        } else {
+            old & !mask
+        };
+        if mask == 0 {
+            // Restore must also be able to put the original mapped value back.
+            if before.loopback_enabled() {
+                crate::loopback::target(before.pid, change.selector, old)?;
+            }
+        }
+        predicted.data[offset..offset + 2].copy_from_slice(&new.to_le_bytes());
+        if new != old {
+            changes.push(change);
         }
     }
     Ok(BasicPlan {
@@ -218,9 +276,9 @@ pub fn execute_basic<B: BasicBackend>(
             .as_nanos();
         let name = format!("basic-{stamp}-{}", std::process::id());
         let backup = directory.join(format!("{name}.json"));
-        config::save_new(&backup,&serde_json::to_vec_pretty(&json!({"schema_version":1,"layout":"minifuse-basic-b2-v1","device":plan.device,"payload_hex":hex(&plan.before.data)})).map_err(|e|e.to_string())?)?;
+        config::save_new(&backup,&serde_json::to_vec_pretty(&json!({"schema_version":1,"layout":"minifuse-basic-b2-v1","device":plan.device,"firmware":plan.before.firmware(),"payload_hex":hex(&plan.before.data)})).map_err(|e|e.to_string())?)?;
         let path = directory.join(format!("{name}.operation.json"));
-        let journal = json!({"schema_version":1,"layout":"minifuse-basic-b2-v1","status":"prepared","device":plan.device,"backup":backup,"changes":plan.changes,"expected_after_hex":hex(&plan.predicted.data)});
+        let journal = json!({"schema_version":1,"layout":"minifuse-basic-b2-v1","status":"prepared","device":plan.device,"firmware":plan.before.firmware(),"backup":backup,"changes":plan.changes,"expected_after_hex":hex(&plan.predicted.data)});
         config::save_new(
             &path,
             &serde_json::to_vec_pretty(&journal).map_err(|e| e.to_string())?,
@@ -235,7 +293,7 @@ pub fn execute_basic<B: BasicBackend>(
         } else {
             let mut error = Error::new(
                 ErrorKind::ReadbackFailed,
-                "Basic switch readback did not match the complete predicted state",
+                "Model-specific readback did not match the complete predicted state",
             );
             error.device_write_attempted = Some(true);
             Err(BasicFailure {

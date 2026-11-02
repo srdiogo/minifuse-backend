@@ -29,6 +29,7 @@ impl Hardware for DeviceReads {
             device: device(),
             model: Model::MiniFuse4,
             connection_marker: 1,
+            firmware: None,
         }])
     }
     fn read(&mut self) -> Result<(Device, State)> {

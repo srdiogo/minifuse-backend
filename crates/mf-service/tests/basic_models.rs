@@ -29,6 +29,7 @@ struct Data {
     failed: bool,
     writes: usize,
     mf4_reads: usize,
+    loopback: bool,
 }
 impl BasicBackend for Fake {
     fn transact_basic(
@@ -61,7 +62,7 @@ impl Hardware for Fake {
             "MF4 must not be queried",
         ))
     }
-    fn read_basic(&mut self, device: &Device) -> Result<(Device, BasicState)> {
+    fn read_basic(&mut self, descriptor: &Descriptor) -> Result<(Device, BasicState)> {
         let d = self.0.lock().unwrap();
         if !d.enabled || d.devices.len() != 1 {
             return Err(ApiError::new(
@@ -69,13 +70,30 @@ impl Hardware for Fake {
                 "Experimental test transport unavailable",
             ));
         }
-        Ok((device.clone(), d.state.clone()))
+        Ok((descriptor.device.clone(), d.state.clone()))
     }
     fn module_capabilities(&mut self) -> Result<ModuleCapabilities> {
+        let data = self.0.lock().unwrap();
         Ok(ModuleCapabilities {
+            basic_loopback: data.loopback,
+            basic_meters: data.loopback,
             basic_switches: true,
             ..Default::default()
         })
+    }
+    fn model_meters(&mut self, descriptor: &Descriptor) -> Result<mf_core::ModelMeters> {
+        Ok(mf_core::ModelMeters::decode(
+            descriptor.device.product_id,
+            &vec![
+                0;
+                if descriptor.device.product_id == 0xaf93 {
+                    24
+                } else {
+                    16
+                }
+            ],
+        )
+        .unwrap())
     }
     fn execute(&mut self, _: &Plan, _: &Path) -> std::result::Result<Outcome, Error> {
         panic!("Basic model dispatched to MF4")
@@ -111,6 +129,7 @@ impl Test {
                 },
                 model: Model::from_pid(pid).unwrap(),
                 connection_marker: 1,
+                firmware: None,
             }],
             state: BasicState::new(
                 if pid == 0xaf93 { pid } else { 0xaf80 },
@@ -121,6 +140,7 @@ impl Test {
             failed: false,
             writes: 0,
             mf4_reads: 0,
+            loopback: false,
         })));
         if pid == 0xaf90 {
             hardware.0.lock().unwrap().state = BasicState::new(pid, &[0; 46]).unwrap();
@@ -146,6 +166,15 @@ impl Test {
                 .is_none()
         );
         test
+    }
+    fn enable_loopback(&mut self) {
+        let mut d = self.hardware.0.lock().unwrap();
+        let pid = d.devices[0].device.product_id;
+        let firmware =
+            mf_core::FirmwareVersion::from_bcd(if pid == 0xaf93 { 0x100 } else { 0x152 }).unwrap();
+        d.devices[0].firmware = Some(firmware);
+        d.loopback = true;
+        d.state = d.state.clone().enable_loopback(firmware).unwrap();
     }
     fn call(&mut self, method: &str, params: Value) -> Value {
         self.service.request(
@@ -261,4 +290,95 @@ fn inventory_failure_and_reconnection_invalidate_basic_state_and_plans() {
     );
     assert!(r.get("error").is_some());
     assert_eq!(t.hardware.0.lock().unwrap().writes, 0);
+}
+
+#[test]
+fn loopback_support_includes_firmware_scoped_live_controls_presets_and_meters() {
+    for pid in [0xaf80, 0xaf90, 0xaf93] {
+        let mut t = Test::new(pid);
+        t.enable_loopback();
+        let d = t.device();
+        assert_eq!(d["profile"]["layout"], "loopback_mixer");
+        assert_eq!(d["firmware"]["loopback_compatible"], true);
+        let s = t.state();
+        assert_eq!(s["capabilities"]["mixer"], true);
+        assert_eq!(s["capabilities"]["host_snapshots"], true);
+        let snapshot = t.call(
+            "capture_snapshot",
+            json!({"device_id":s["device_id"],"generation":s["generation"]}),
+        );
+        assert!(snapshot.get("error").is_none(), "{snapshot}");
+        let begun=t.call("begin_control",json!({"device_id":s["device_id"],"generation":s["generation"],"expected_revision":s["revision"],"target":{"kind":"master_level","mix":"loopback"},"idempotency_key":"loopback-gesture"}));
+        assert!(begun.get("error").is_none(), "{begun}");
+        let operation = begun["result"]["operation_id"].clone();
+        let update = t.call(
+            "update_control",
+            json!({"operation_id":operation,"sequence":1,"value":-12.0,"finish":true}),
+        );
+        assert!(update.get("error").is_none(), "{update}");
+        t.service.execute_next();
+        let result = t.call("get_operation", json!({"operation_id":operation}));
+        assert_eq!(result["result"]["device_outcome"], "verified", "{result}");
+        let s = t.state();
+        assert_eq!(s["state"]["mixes"][0]["master_db"], -12.0);
+        let restore=t.call("plan_restore",json!({"device_id":s["device_id"],"generation":s["generation"],"revision":s["revision"],"snapshot":snapshot["result"]["snapshot"]}));
+        assert!(restore.get("error").is_none(), "{restore}");
+        let sub = t.call("subscribe", json!({"events":["meters_updated"]}));
+        assert!(sub.get("error").is_none(), "{sub}");
+        t.service.poll_meters();
+        assert!(
+            t.service
+                .pending_events
+                .iter()
+                .any(|(_, e)| e["event"] == "meters_updated"
+                    && e["data"]["meter_layout"] == "minifuse-basic-c2-v1")
+        );
+        assert_eq!(t.hardware.0.lock().unwrap().mf4_reads, 0);
+    }
+}
+
+#[test]
+fn firmware_or_module_changes_revoke_loopback_and_invalidate_prepared_writes() {
+    for raw in [None, Some(0x149), Some(0x160), Some(0x200)] {
+        let mut t = Test::new(0xaf90);
+        t.enable_loopback();
+        let s = t.state();
+        let p=t.call("plan_changes",json!({"device_id":s["device_id"],"generation":s["generation"],"expected_revision":s["revision"],"changes":[{"kind":"master","mix":"loopback","level_db":-12}]}));
+        assert!(p.get("error").is_none(), "{p}");
+        {
+            let mut d = t.hardware.0.lock().unwrap();
+            d.devices[0].firmware = raw.and_then(mf_core::FirmwareVersion::from_bcd);
+            d.state = BasicState::new(0xaf90, d.state.raw()).unwrap();
+        }
+        let changed = t.device();
+        assert_ne!(changed["generation"], s["generation"]);
+        assert_eq!(changed["capabilities"]["mixer"], false);
+        assert_eq!(changed["capabilities"]["host_snapshots"], false);
+        assert_eq!(changed["capabilities"]["signal_meters"], false);
+        assert_eq!(changed["capabilities"]["input_switches"], true);
+        let result = t.call(
+            "apply_plan",
+            json!({"plan_id":p["result"]["plan_id"],"idempotency_key":"firmware-changed"}),
+        );
+        assert!(result.get("error").is_some(), "{result}");
+        assert_eq!(t.hardware.0.lock().unwrap().writes, 0);
+    }
+    // A mismatched transport must not grant advanced state even if its reply claims it.
+    for missing_module in [false, true] {
+        let mut t = Test::new(0xaf93);
+        t.enable_loopback();
+        {
+            let mut d = t.hardware.0.lock().unwrap();
+            if missing_module {
+                d.loopback = false;
+            } else {
+                d.devices[0].firmware = None;
+            }
+        }
+        let d = t.device();
+        assert_eq!(d["capabilities"]["mixer"], false);
+        assert_eq!(d["connection"], "unavailable");
+        assert_eq!(d["profile"]["layout"], "inputs_and_monitoring");
+        assert_eq!(t.hardware.0.lock().unwrap().writes, 0);
+    }
 }

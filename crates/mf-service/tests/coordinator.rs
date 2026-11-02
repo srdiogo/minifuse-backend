@@ -43,6 +43,7 @@ impl Fake {
                 },
                 model: Model::MiniFuse4,
                 connection_marker: 1,
+                firmware: None,
             }],
             state: State::from_hex(include_str!("fixtures/windows-b2.hex").trim()).unwrap(),
             reads: 0,
@@ -80,6 +81,8 @@ impl Hardware for Fake {
             input_switches: d.input_switches,
             signal_meters: d.signal_meters,
             basic_switches: false,
+            basic_loopback: false,
+            basic_meters: false,
         })
     }
     fn meters(&mut self) -> Result<(Device, mf_core::Meters)> {

@@ -1,87 +1,112 @@
-# Model-specific controls
+# Experimental MiniFuse 1, 2 and 2 OTG support
 
-MiniFuse 1, MiniFuse 2 and MiniFuse 2 OTG have experimental input and direct
-monitoring support. Device detection and presentation are automatic. Hardware
-reads and writes for these models require an explicitly enabled test session.
-They have **not yet been validated on physical hardware**.
+These models have their own input controls and **native hardware loopback mixer**.
+Inventory selects the correct layout automatically. Reads and writes require a
+deliberately enabled test session; physical acceptance is still pending for each
+model. The normal installer does not enable experimental controls.
 
-| Interface | Normal USB ID | B2 bytes | Implemented test controls | Hardware acceptance |
+| Interface | Normal USB ID | B2 bytes | Candidate firmware family | Native loopback sources |
 |---|---|---:|---|---|
-| MiniFuse 1 | `1c75:af80` | 46 | INST 1, +48 V, direct monitor | Pending |
-| MiniFuse 2 | `1c75:af90` | 46 | INST 1, INST 2, shared +48 V, direct mono | Pending |
-| MiniFuse 2 OTG | `1c75:af93` | 52 | INST 1, INST 2, shared +48 V, direct mono | Pending separately |
-| MiniFuse 4 | `1c75:af70` | 190 | Existing mixer, routing, input switches, meters and host presets | Bounded reference validation |
+| MiniFuse 1 | `1c75:af80` | 46 | `1.5.x` | Analog 1, USB 1–2, USB 3–4 |
+| MiniFuse 2 | `1c75:af90` | 46 | `1.5.x` | Analog 1, Analog 2, USB 1–2, USB 3–4 |
+| MiniFuse 2 OTG | `1c75:af93` | 52 | `1.0.x` | Analog 1, Analog 2, USB 1–2, USB 5–6 |
+| MiniFuse 4 | `1c75:af70` | 190 | Existing independent implementation | Existing three-mix layout |
 
-Initialization/storage IDs `af82`, `af92` and `af72` are recognized for
-presentation only. They never enter audio control transactions. The application
-does not change USB mode, firmware or device storage.
+Initialization/storage IDs `af82`, `af92` and `af72` select an information-only
+page. They never enter audio control transactions. Firmware and USB mode are
+never changed by this software.
 
-## Evidence and boundaries
+## Available controls
 
-The implementation combines the existing MF1/MF2 selector allowlist with
-model-specific analysis of MiniFuse Control Center 1.4.2.1381. REA 6.8.0 and
-Ghidra 12.1.4 completed static analysis of the three model constructors and
-state presentation paths. The executable was not run and its hash was unchanged.
-[Evidence](EVIDENCE.md) separates direct observations from protocol deductions.
+- Model-specific INST and +48 V switches; MF1 has no INST2. +48 V is shared on
+  two-input models. Direct monitoring is labeled direct monitor on MF1 and direct
+  mono on MF2/OTG. Physical input-gain and output knobs remain physical controls.
+- One hardware loopback mix, source gain and mute, analog-source pan, and a
+  stereo master. USB playback pairs have linked gain/mute and no pan or solo.
+- Independent loopback-enable, duplicate recording on USB inputs 1–2, and
+  physical-output/headphone monitoring flags. These are separate switches,
+  not the MF4 route selector or membership controls.
+- OTG-only Main → OTG selection, OTG → monitoring selection and front-panel
+  meter-source selection. No unverified OTG-source gain fader is synthesized.
+- Input and loopback-mix meters; OTG additionally reports an OTG input pair.
+  USB playback strips have no individual native peak samples. Channel order and
+  conversion follow the inspected host code; physical calibration is pending.
+- Host presets with comparison before restore. Presets are model-specific and
+  restore mapped mixer/routing fields only. INST, +48 V, direct monitoring and
+  opaque words are preserved. They do not establish saving in device memory.
 
-The normal-mode state lengths are 23, 23 and 26 little-endian words. The
-experimental switch mapping is:
+The full application provides input controls, mixer, routing, meters and presets.
+The Omarchy panel provides native mixer/routing controls and meters, read-only
+input indicators, and a shortcut to the full application for input changes and
+preset management. Stable fader delegates retain pointer gestures across readback.
 
-| Control | Selector | Byte offset | Word mask | Models |
-|---|---|---:|---:|---|
-| INST 1 | `0000` | 0 | `0001` | MF1, MF2, MF2 OTG |
-| INST 2 | `0001` | 0 | `0002` | MF2, MF2 OTG |
-| Phantom power | `0400` | 8 | `0001` | MF1, MF2, MF2 OTG |
-| Direct monitor / mono | `0500` | 10 | `0001` | MF1, MF2, MF2 OTG |
+Arturia distinguishes the native mixer introduced with [MF1/MF2 firmware 1.5](https://www.arturia.com/products/audio/minifuse/update)
+from **SLS**, its Windows-only host processing with additional virtual devices
+and independent software mixes. This implementation controls the native mixer;
+it does not reproduce SLS. The [OTG download catalog](https://www.arturia.com/support/downloads-manuals/product/minifuse-2-otg)
+lists a separate 1.0.0 firmware line.
 
-Only Boolean values are accepted. All other words and bits are preserved.
-This mapping remains a test hypothesis until the [hardware checklist](TESTING.md)
-passes on each model. MF4 uses its existing independent state and selectors;
-in particular, its phantom-power selector is different.
+## Firmware compatibility
 
-No MF4 faders, mix routes, snapshots or meter calibration are applied to other
-models. Physical gain knobs are not remote gain controls. Windows host software
-loopback fields are not assumed to be hardware mixer fields. OTG routing and
-meter endpoints require their own evidence and are not implemented here.
+Inventory reads the cached standard USB `bcdDevice` descriptor from Linux sysfs.
+The official Windows application uses that same descriptor for its firmware
+version display. The decoder is `major = raw >> 8`, `minor = (raw >> 4) & 15`,
+`patch = raw & 15`; for example `0152` is `1.5.2`.
 
-## Architecture
+The allowlist is intentionally family-specific: MF1/MF2 `1.5.0`–`1.5.9`, OTG
+`1.0.0`–`1.0.9`. Missing, malformed, older or unreviewed newer families leave
+loopback controls unavailable. **This is an experimental compatibility policy,
+not a claim that every patch has been tested.** It is not a generic `>= 1.5`
+comparison, and the shared resource's generic minimum `1.2.0` is not used as a
+loopback threshold. A compatible version alone never grants writes.
 
-`ModelProfile` is presentation metadata, not a permission grant. Inventory always
-includes it, even when the test transport is disabled. Profiles describe the
-normal or initialization mode, physical I/O, layout, available input targets and
-validation level. `get_model_profiles` exposes the same catalog without hardware.
-[profiles-v1.json](profiles-v1.json) contains synthetic presentation fixtures.
+`MF_SERVICE_EXPERIMENTAL_BASIC=1` enables only the existing experimental input
+path. `MF_SERVICE_EXPERIMENTAL_LOOPBACK=1` enables that input path and, when
+firmware, full state and the matching module agree, the native mixer. Missing
+module capabilities leave those features unavailable. An unsupported firmware
+may still expose basic switches if its exact bounded state can be read; no MF4
+layout is substituted.
 
-`BasicState`, `BasicPlan` and the basic transport are independent of MF4's
-190-byte layout. The driver uses fixed-size status/transaction records, a
-model-specific length, a maximum of four switch changes and a strict selector
-allowlist. It refuses multiple basic interfaces instead of choosing one.
+The driver rechecks PID, bus/address, **exact firmware descriptor**, and all
+46/52 state bytes before loopback writes. Reconnection or firmware/capability
+changes invalidate old plans and gestures. No firmware updater is included.
 
-The service requires `MF_SERVICE_EXPERIMENTAL_BASIC=1`, an exact identity match,
-and module capability bit `4`. Older modules leave controls unavailable. The
-application enables buttons only after confirmed state and advertised write
-support. The Omarchy panel shows model-specific **read-only indicators** and
-opens the full application for control.
+## Protocol and transaction boundaries
 
-Every write follows the existing plan/apply workflow. The service retains an
-operation identity, and the core durably writes a baseline and prepared journal
-before dispatch. The driver rechecks the entire model-specific state immediately
-before writing. It verifies all 46/52 bytes after the transaction and attempts
-bounded rollback on failure. Rollback is reported as verified only when complete
-readback equals the original state. Reconnection invalidates plans. Nothing is
-replayed automatically after uncertainty or restart.
+The model state is independent of MF4. Boolean input selectors are `0000` for
+INST1 (word 0, bit 0), `0001` for INST2 (word 0, bit 1), `0400` for phantom
+(word 4, bit 0), and `0500` for direct monitor/mono (word 5, bit 0).
+[The protocol evidence](EVIDENCE.md) documents the additional selectors and meter
+layout with model-specific bindings.
 
-These journals are diagnostic/recovery records, not user presets. No basic-model
-snapshot restore is exposed. A no-op neither dispatches nor creates a journal.
+The basic driver ABI remains 68-byte status / 136-byte transaction, maximum four
+switch writes. The additive firmware-gated ABI uses a 250-byte transaction,
+maximum 32 changes, and a 44-byte meter record. Capability bits are `4` (basic
+switches), `8` (native loopback transactions) and `16` (model-specific meters).
+Multiple normal-mode basic interfaces are refused rather than guessed.
 
-## Development validation
+Every mutation uses the existing typed plan/apply or continuous-control workflow.
+The core durably stores a private baseline and prepared journal before dispatch.
+The driver preserves unknown bits/words, verifies the complete predicted state
+and attempts bounded reverse rollback on failure. Restored is reported only when
+complete readback equals the original state. No uncertain operation is replayed
+after disconnect/restart. A no-op sends no writes and creates no journal.
 
-Run the workspace tests and Clippy, the C/Rust protocol comparison, and a
-build-only driver check. The protocol test checks every selector with Boolean
-and invalid values across normal, initialization and unsupported model IDs.
-Service tests use synthetic state for per-model dispatch, readback, reconnect,
-disabled capability and initialization-mode gates. Frontend tests verify
-per-model controls, read-only panel behavior and absence of MF4 mixer views.
+`ModelProfile` is versioned presentation metadata, not permission. The static
+catalog remains conservative (`inputs_and_monitoring`). Runtime inventory uses
+`loopback_mixer` only when the advanced state is available. Unknown profiles stay
+disabled. See [IPC](../IPC.md), [software validation](VALIDATION.md) and the
+[hardware acceptance checklist](TESTING.md).
 
-Software tests are not substitutes for LED, audio and Windows USB capture
-acceptance. Promote one model at a time only after its evidence is recorded.
+## Frontend development without hardware
+
+[loopback-v1.json](loopback-v1.json) is a **synthetic** fixture generated by:
+
+```sh
+cargo run --locked -p mf-core --example loopback_fixture > docs/models/loopback-v1.json
+```
+
+The generator opens no device or socket. Matching copies in the GUI and panel
+exercise per-model layouts, firmware agreement, meters and readback behavior.
+Neither these fixtures nor successful software tests establish hardware support.
+We welcome owners of MF1, MF2 and MF2 OTG to provide the checklist results.
