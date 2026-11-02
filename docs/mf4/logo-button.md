@@ -78,3 +78,25 @@ Long-press Sleep remains device-owned. It was not physically exercised in this
 session, and no Sleep command, nonvolatile save or firmware modification was
 introduced. Other models and firmware require their own evidence before
 support is enabled.
+
+## Desktop acceptance, 2 November 2026
+
+On the same MF4, the installed service advertised the button capability after a
+confirmed read. The operator confirmed that a short press opened MiniFuse
+Control and repeated presses kept one window. Nine live events were observed
+across two service sessions. The complete device-state comparison found only
+byte 14 changed from counter 0 to 9; the other 189 bytes were identical.
+
+A restart with a nonzero counter did not open a window. The final application
+launch ran in its own transient systemd user unit. Restarting the activation
+agent preserved the existing GUI process and window; another presentation
+request also preserved that process. The window was floating on this Omarchy
+session. This records local compositor behavior, not a promise of forced focus
+on every Wayland desktop. The agent and service were left enabled at login.
+
+Backend validation passed 77 Rust tests, including the production driver
+harness's 122 simulated scenarios, and 20 packaging/tool tests. The application
+passed 45 tests with each Basic/Fusion style, including actual single-instance
+processes, expired idle connections and socket/launch-policy cases. Clippy,
+QML lint and temporary-prefix installation checks passed. No driver reload,
+firmware modification, preset restore or audio-configuration write was needed.
