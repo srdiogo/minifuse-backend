@@ -267,7 +267,7 @@ Profiles select presentation; they do not grant any read/write capability.
 Unknown profile schemas/layouts must not enable controls. Multiple recognized
 interfaces require explicit selection; bundled clients leave controls unavailable.
 
-For an explicitly enabled test session, MF1/MF2/OTG `state.layout` is
+For compatible MF1/MF2/OTG devices, `state.layout` is
 `minifuse-basic-b2-v1`, `mixes` is empty and `inputs` contains Boolean `inst1`,
 `phantom_power`, `direct_monitor`, and `inst2` for two-input models. `mixer`,
 `signal_meters` and `host_snapshots` remain false. `switch_readback` requires
@@ -279,7 +279,7 @@ revisions and durable outcomes retain their existing semantics.
 
 Initialization/storage modes have `layout: initialization`, no input controls
 and no audio capability. See [model support](models/README.md) for the separate
-46/52-byte driver ABI, opt-in gate, evidence and acceptance requirements.
+46/52-byte driver ABI, firmware gate, evidence and acceptance requirements.
 
 ### Firmware-gated native loopback
 
@@ -287,7 +287,7 @@ and no audio capability. See [model support](models/README.md) for the separate
 `source: usb_device_descriptor`, `loopback_compatible`, `required_family` and
 `hardware_validation`. Compatibility is model-specific, not permission.
 
-With the loopback opt-in, compatible confirmed firmware, exact state and matching
+With compatible confirmed firmware, exact state and matching
 module features, the runtime profile becomes `loopback_mixer`. Its state keeps
 `layout: minifuse-basic-b2-v1` and adds `firmware`, one `loopback` mix, independent
 `loopback: {enabled, usb12, monitor}` flags and an OTG-only `otg` object. `mixer`,

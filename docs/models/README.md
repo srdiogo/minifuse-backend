@@ -1,9 +1,10 @@
 # Experimental MiniFuse 1, 2 and 2 OTG support
 
 These models have their own input controls and **native hardware loopback mixer**.
-Inventory selects the correct layout automatically. Reads and writes require a
-deliberately enabled test session; physical acceptance is still pending for each
-model. The normal installer does not enable experimental controls.
+Inventory selects the correct layout automatically. The backend exposes controls
+when firmware, driver capabilities and confirmed device state agree. Physical
+acceptance remains pending for each model. Report unexpected behavior with the
+model, firmware and kernel in a [compatibility issue](https://github.com/srdiogo/minifuse-backend/issues/new?template=compatibility_report.yml).
 
 | Interface | Normal USB ID | B2 bytes | Candidate firmware family | Native loopback sources |
 |---|---|---:|---|---|
@@ -55,17 +56,14 @@ version display. The decoder is `major = raw >> 8`, `minor = (raw >> 4) & 15`,
 
 The allowlist is intentionally family-specific: MF1/MF2 `1.5.0`–`1.5.9`, OTG
 `1.0.0`–`1.0.9`. Missing, malformed, older or unreviewed newer families leave
-loopback controls unavailable. **This is an experimental compatibility policy,
+model controls unavailable. **This is an experimental compatibility policy,
 not a claim that every patch has been tested.** It is not a generic `>= 1.5`
 comparison, and the shared resource's generic minimum `1.2.0` is not used as a
 loopback threshold. A compatible version alone never grants writes.
 
-`MF_SERVICE_EXPERIMENTAL_BASIC=1` enables only the existing experimental input
-path. `MF_SERVICE_EXPERIMENTAL_LOOPBACK=1` enables that input path and, when
-firmware, full state and the matching module agree, the native mixer. Missing
-module capabilities leave those features unavailable. An unsupported firmware
-may still expose basic switches if its exact bounded state can be read; no MF4
-layout is substituted.
+Basic switches require compatible firmware and the matching basic driver feature.
+Native mixer, meters and presets also require their respective driver capabilities
+and a confirmed advanced state. The firmware families apply to both paths.
 
 The driver rechecks PID, bus/address, **exact firmware descriptor**, and all
 46/52 state bytes before loopback writes. Reconnection or firmware/capability

@@ -53,18 +53,11 @@ Record corresponding LEDs/audio behavior and restore the initial state. Compare
 all payload bytes with the documented fields. Stop on unexpected lengths,
 unrelated changes or contradictory indicators.
 
-## Deliberate application session
+## Application session
 
-Basic switches alone use `MF_SERVICE_EXPERIMENTAL_BASIC=1`. To test native
-loopback, use a temporary session opt-in, with no second service on the device:
-
-```sh
-systemctl --user set-environment MF_SERVICE_EXPERIMENTAL_LOOPBACK=1
-systemctl --user restart mf-service.service
-```
-
-Alternatively stop the installed service and run the test service in the
-foreground with that variable. The normal installer sets neither variable.
+Start the installed service with one normal-mode interface connected. Compatible
+controls appear automatically. The environment variables in the commands above
+apply only to the standalone read-only collector.
 
 1. Confirm model, firmware, exact sources and one native loopback mix. MF1 has no
    INST2/Analog 2. MF1/MF2 show USB 1–2 and 3–4; OTG shows USB 1–2 and 5–6.
@@ -98,43 +91,7 @@ foreground with that variable. The normal installer sets neither variable.
    indicators. Open the full application for input changes and presets. Capture
    layout/readback behavior without claiming a new host version is supported.
 9. Reconnect, restart and switch models between sessions. Old plans/gestures must
-   fail and no pending operation may replay. Verify default-disabled behavior
-   after ending the opt-in. Report uncertain outcomes and preserve journals;
+   fail and no pending operation may replay. Verify that incompatible firmware or unavailable readback revokes controls. Report uncertain outcomes and preserve journals;
    never blindly retry an uncertain mutation.
 
-End the session and restore the ordinary service environment:
-
-```sh
-systemctl --user unset-environment MF_SERVICE_EXPERIMENTAL_BASIC MF_SERVICE_EXPERIMENTAL_LOOPBACK
-systemctl --user restart mf-service.service
-```
-
-Remove any separately configured permanent override too. Confirm experimental
-controls return to unavailable. Restore the hardware's original state deliberately;
-this software does not automatically restore phantom power or input mode.
-
-## Windows reference capture
-
-Use the official Control Center on Windows or with exclusive USB passthrough to
-a VM. Capture only the interface with USBPcap/Wireshark. Record application/driver
-versions, VID/PID, firmware descriptor and a timestamped action list. Close other
-control applications and change only one field in each marked interval.
-
-Capture startup and B2 polling, then supported button sequences, source gains,
-analog pan, mute, master, each routing flag and C2 meters. For OTG capture all
-three additional selectors and second-host connection conditions separately.
-Preserve setup packets, completion lengths, payloads and timestamps. Separate
-native hardware traffic from Windows SLS host/virtual-device behavior. Do not
-capture firmware updates, mode transitions, effects or device-storage operations.
-A descriptor-only capture cannot validate parameter payloads.
-
-## Reporting and promotion
-
-Report model/firmware and pass/fail/not tested per control, LED, full payload,
-operation outcome, audio path and meter channel/scale. Share minimal readbacks,
-relevant sanitized capture excerpts and journals after checking for unrelated
-identifiers. Never attach proprietary software or firmware images.
-
-Promotion is model-specific and requires reviewed captures, repeatable writes,
-readback, rollback/conflict behavior where feasible, reconnect/restart results
-and firmware agreement. Static analysis does not replace that evidence.
+Restore the hardware's original state deliberately at the end of the test.

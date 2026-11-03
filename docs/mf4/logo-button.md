@@ -100,3 +100,15 @@ passed 45 tests with each Basic/Fusion style, including actual single-instance
 processes, expired idle connections and socket/launch-policy cases. Clippy,
 QML lint and temporary-prefix installation checks passed. No driver reload,
 firmware modification, preset restore or audio-configuration write was needed.
+
+
+## Model availability
+
+The dedicated A button is present on the MiniFuse 4. The MiniFuse 1, 2 and 2 OTG
+have their own physical audio controls. See the Arturia panel diagrams in the
+[MF1 manual](https://www.arturia.com/api/download/products/minifuse-1/manual/minifuse-1_Manual_1_5_0_EN.pdf),
+[MF2 manual](https://www.arturia.com/api/download/products/minifuse-2/manual/minifuse-2_Manual_1_5_0_EN.pdf)
+and [MF2 OTG manual](https://www.arturia.com/api/download/products/minifuse-2-otg/manual/minifuse-2-otg_Manual_1_0_0_EN.pdf).
+
+A short A press opens the mixer, presents it when it is in the background, or
+closes it when focused. Window focus follows the compositor's activation policy.

@@ -61,7 +61,7 @@ model.
 ## Experimental native loopback
 
 The same gesture workflow supports the MF1/MF2/OTG native loopback master,
-source gain and analog pan when firmware, full state, opt-in and driver
+source gain and analog pan when firmware, full state and driver
 capabilities agree. Stereo USB pairs have linked gain and no pan. Each sample
 uses the separate bounded 46/52-byte state and firmware-gated transaction ABI;
 it never enters the MF4 transport. A model/firmware/capability change revokes

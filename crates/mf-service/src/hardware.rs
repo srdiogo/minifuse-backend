@@ -50,36 +50,24 @@ pub trait Hardware: Send + 'static {
         backups: &Path,
     ) -> std::result::Result<Outcome, mf_core::Error>;
 }
-fn experimental_enabled() -> bool {
-    std::env::var("MF_SERVICE_EXPERIMENTAL_BASIC").as_deref() == Ok("1")
-        || std::env::var("MF_SERVICE_EXPERIMENTAL_LOOPBACK").as_deref() == Ok("1")
-}
 pub struct Linux;
 impl Hardware for Linux {
     fn read_basic(&mut self, descriptor: &Descriptor) -> Result<(Device, mf_core::BasicState)> {
-        if !experimental_enabled() {
-            return Err(ApiError::new(
-                "unsupported_capability",
-                "This model's hardware validation is pending. Experimental basic controls require an explicitly enabled test session.",
-            ));
-        }
         let kernel = Kernel::open(false)?;
         let mut result = kernel.read_basic()?;
-        if std::env::var("MF_SERVICE_EXPERIMENTAL_LOOPBACK").as_deref() == Ok("1")
-            && kernel.module_capabilities()?.basic_loopback
-        {
+        if result.0 != descriptor.device {
+            return Err(ApiError::new(
+                "device_changed",
+                "Basic readback belongs to a different interface",
+            ));
+        }
+        if kernel.module_capabilities()?.basic_loopback {
             if let Some(firmware) = descriptor
                 .firmware
                 .filter(|f| f.supports_loopback(descriptor.device.product_id))
             {
                 result.1 = result.1.enable_loopback(firmware)?;
             }
-        }
-        if result.0 != descriptor.device {
-            return Err(ApiError::new(
-                "device_changed",
-                "Basic readback belongs to a different interface",
-            ));
         }
         Ok(result)
     }
@@ -88,24 +76,9 @@ impl Hardware for Linux {
         plan: &mf_core::BasicPlan,
         backups: &Path,
     ) -> std::result::Result<mf_core::BasicOutcome, mf_core::Error> {
-        if !experimental_enabled()
-            || (plan.before().loopback_enabled()
-                && std::env::var("MF_SERVICE_EXPERIMENTAL_LOOPBACK").as_deref() != Ok("1"))
-        {
-            return Err(mf_core::Error::new(
-                mf_core::ErrorKind::UnsupportedCapability,
-                "Experimental basic controls are disabled",
-            ));
-        }
         mf_core::execute_basic(&mut Kernel::open(true)?, plan, backups)
     }
     fn model_meters(&mut self, descriptor: &Descriptor) -> Result<mf_core::ModelMeters> {
-        if std::env::var("MF_SERVICE_EXPERIMENTAL_LOOPBACK").as_deref() != Ok("1") {
-            return Err(ApiError::new(
-                "unsupported_capability",
-                "Experimental loopback meters are disabled",
-            ));
-        }
         let (device, firmware, meters) = Kernel::open(false)?.model_meters()?;
         if device != descriptor.device || Some(firmware) != descriptor.firmware {
             return Err(ApiError::new(

@@ -18,7 +18,8 @@ Includes the session service, Qt mixer, DKMS driver and optional desktop agent.
 mkdir -p %{buildroot}
 tar -xzf %{_topdir}/payload.tar.gz -C %{buildroot}
 
-%post
+%posttrans
+# Register the replacement after the previous RPM has removed its DKMS module.
 /usr/lib/minifuse/dkms-lifecycle install '%{version}'
 
 %preun
