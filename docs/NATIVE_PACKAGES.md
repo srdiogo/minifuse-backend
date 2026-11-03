@@ -38,6 +38,9 @@ systemctl --user enable --now mf-service.service
 minifuse-control
 ```
 
+After upgrading an existing installation, run
+`systemctl --user restart mf-service.service` to start the updated backend.
+
 On a validated MF4, select **Application** in the desktop activation settings
 and enable the optional `minifuse-desktop-agent.service` user unit for the A
 button. The GUI and backend are included in the native packages.

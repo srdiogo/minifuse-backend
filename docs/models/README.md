@@ -56,7 +56,7 @@ version display. The decoder is `major = raw >> 8`, `minor = (raw >> 4) & 15`,
 
 The allowlist is intentionally family-specific: MF1/MF2 `1.5.0`–`1.5.9`, OTG
 `1.0.0`–`1.0.9`. Missing, malformed, older or unreviewed newer families leave
-loopback controls unavailable. **This is an experimental compatibility policy,
+model controls unavailable. **This is an experimental compatibility policy,
 not a claim that every patch has been tested.** It is not a generic `>= 1.5`
 comparison, and the shared resource's generic minimum `1.2.0` is not used as a
 loopback threshold. A compatible version alone never grants writes.
