@@ -63,7 +63,7 @@ restored only by explicit user action.
 | Project | Purpose |
 |---|---|
 | [MiniFuse Control](https://github.com/srdiogo/minifuse-control) | Full mixer, routing, input controls and presets |
-| **MiniFuse Backend** — this repository | Driver, shared core, session API and complete installer |
+| **MiniFuse Backend** — this repository | Driver, shared core and session API for desktop clients and CLIs |
 | [MiniFuse for Omarchy](https://github.com/srdiogo/omarchy-minifuse) | Optional bar indicator and compact mixer |
 
 The backend repository was previously named `mf-service`. Installed package,
