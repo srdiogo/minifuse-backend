@@ -1,8 +1,7 @@
 # Model support readiness
 
 The implementation is ready for **experimental hardware acceptance**, with
-software checks kept separate from physical evidence. Native loopback remains
-opt-in, firmware-gated and disabled by the normal installer. No new model is
+software checks kept separate from physical evidence. Native loopback is available automatically with compatible firmware, confirmed state and matching driver capabilities. No new model is
 promoted to physically validated status by passing a simulator or CI job.
 
 | Area | Verified without a device | Remaining physical evidence |

@@ -129,7 +129,11 @@ impl Test {
                 },
                 model: Model::from_pid(pid).unwrap(),
                 connection_marker: 1,
-                firmware: None,
+                firmware: mf_core::FirmwareVersion::from_bcd(if pid == 0xaf93 {
+                    0x100
+                } else {
+                    0x152
+                }),
             }],
             state: BasicState::new(
                 if pid == 0xaf93 { pid } else { 0xaf80 },
@@ -355,7 +359,7 @@ fn firmware_or_module_changes_revoke_loopback_and_invalidate_prepared_writes() {
         assert_eq!(changed["capabilities"]["mixer"], false);
         assert_eq!(changed["capabilities"]["host_snapshots"], false);
         assert_eq!(changed["capabilities"]["signal_meters"], false);
-        assert_eq!(changed["capabilities"]["input_switches"], true);
+        assert_eq!(changed["capabilities"]["input_switches"], false);
         let result = t.call(
             "apply_plan",
             json!({"plan_id":p["result"]["plan_id"],"idempotency_key":"firmware-changed"}),

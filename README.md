@@ -27,7 +27,7 @@ is not required, and Qt is needed only by the separate application.
 ## Install
 
 **Installation targets: Ubuntu 26.04 LTS, Fedora 45, and Arch Linux on x86-64.**
-See [native package installation](docs/NATIVE_PACKAGES.md) for DEB, RPM and Arch release packages.
+Download the [latest distribution release](https://github.com/srdiogo/minifuse-backend/releases) or browse the [package archive](https://github.com/srdiogo/minifuse-backend/tree/packages). See [native package installation](docs/NATIVE_PACKAGES.md) for DEB, RPM and Arch instructions.
 This is a development preview with bounded MiniFuse 4 hardware validation.
 
 Download the archive and its checksum file from the
@@ -65,7 +65,7 @@ checksum together; a checksum checks integrity against that published file.
 | Area | Current status |
 |---|---|
 | MiniFuse 4 | Mixer, routes, input switches and meters have bounded hardware validation |
-| MiniFuse 1 / 2 / 2 OTG | Automatic layouts; experimental inputs, native loopback mixer/routing/meters and host presets, gated by firmware and explicit opt-in; hardware tests pending |
+| MiniFuse 1 / 2 / 2 OTG | Automatic layouts; experimental inputs, native loopback mixer/routing/meters and host presets, automatically available with compatible firmware and confirmed driver capabilities; hardware tests pending |
 | Arch Linux x86_64 | Native packages and complete installation kit available |
 | Omarchy | Optional panel; tested host versions are recorded in the desktop source lock |
 | Ubuntu 26.04 LTS / Fedora 45 x86_64 | Native DEB / RPM packages in distribution releases |
@@ -83,7 +83,7 @@ kit. The report did not identify a clean-machine versus upgrade setup; see
 [installation evidence](docs/INSTALLATION_VALIDATION.md). Other hardware,
 kernels and desktop combinations need their own validation.
 
-MF4 short-press logo events are available with validated USB firmware descriptor 1.0.1; see [button support](docs/mf4/logo-button.md). Effects, firmware changes and device-storage writes are
+The MF4 A button toggles the mixer with validated USB firmware descriptor 1.0.1. On any supported model, `minifuse-control --toggle` offers the same desktop action. See [button support](docs/mf4/logo-button.md). Effects, firmware changes and device-storage writes are
 outside the available feature set. Presets are files on the computer and are
 restored only by explicit user action.
 

@@ -1,7 +1,8 @@
 # Native packages for MiniFuse for Linux
 
 Download the package for your distribution and `SHA256SUMS` from the
-[release page](https://github.com/srdiogo/minifuse-backend/releases). These
+[release page](https://github.com/srdiogo/minifuse-backend/releases) or the
+[package archive](https://github.com/srdiogo/minifuse-backend/tree/packages). These
 packages target x86-64. Verify the downloaded files in the same directory:
 
 ```sh
@@ -59,5 +60,4 @@ matrix and publishes a versioned prerelease with the companion revisions and
 checksums after all jobs pass.
 
 Native VM acceptance covers installation, DKMS build and load, the session API
-and offscreen Qt startup. Physical device testing is separate. The model
-support flags for MF1, MF2 and 2 OTG remain opt-in.
+and offscreen Qt startup. Physical device testing is separate. MF1, MF2 and 2 OTG features are enabled automatically after firmware, driver and readback checks.

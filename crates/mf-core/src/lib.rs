@@ -178,7 +178,7 @@ impl Model {
                 if mixer {
                     "Input writes and signal meters require matching module features; logo-button events are unavailable."
                 } else {
-                    "Model-specific basic controls are experimental and require explicit test-session enablement; mixers, signal meters and logo-button events are unavailable."
+                    "Experimental model controls require compatible firmware and confirmed driver state."
                 },
                 "Membership is subject to the current mono/stereo topology.",
                 "Readback does not confirm nonvolatile saving.",

@@ -545,14 +545,22 @@ impl<H: Hardware> Coordinator<H> {
                 0xaf80 | 0xaf90 | 0xaf93
             ) {
                 let descriptor = self.devices[i].descriptor.clone();
-                let result = self
-                    .hardware
-                    .read_basic(&descriptor)
-                    .and_then(|(device, state)| {
-                        self.hardware
-                            .module_capabilities()
-                            .map(|module| (device, state, module))
-                    });
+                let result = if descriptor.firmware.is_some_and(|firmware| {
+                    firmware.supports_loopback(descriptor.device.product_id)
+                }) {
+                    self.hardware
+                        .read_basic(&descriptor)
+                        .and_then(|(device, state)| {
+                            self.hardware
+                                .module_capabilities()
+                                .map(|module| (device, state, module))
+                        })
+                } else {
+                    Err(ApiError::new(
+                        "unsupported_capability",
+                        "Model controls require a compatible USB firmware descriptor",
+                    ))
+                };
                 match result {
                     Ok((device, state, module))
                         if device == descriptor.device
