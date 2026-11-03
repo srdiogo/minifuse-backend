@@ -102,7 +102,7 @@ QML lint and temporary-prefix installation checks passed. No driver reload,
 firmware modification, preset restore or audio-configuration write was needed.
 
 
-## Models and desktop shortcuts
+## Model availability
 
 The dedicated A button is present on the MiniFuse 4. The MiniFuse 1, 2 and 2 OTG
 have their own physical audio controls. See the Arturia panel diagrams in the
@@ -111,6 +111,4 @@ have their own physical audio controls. See the Arturia panel diagrams in the
 and [MF2 OTG manual](https://www.arturia.com/api/download/products/minifuse-2-otg/manual/minifuse-2-otg_Manual_1_0_0_EN.pdf).
 
 A short A press opens the mixer, presents it when it is in the background, or
-closes it when focused. The same action is available through
-`minifuse-control --toggle`, which can be assigned to a desktop shortcut for
-any model. Window focus follows the compositor's activation policy.
+closes it when focused. Window focus follows the compositor's activation policy.
