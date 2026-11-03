@@ -26,7 +26,8 @@ is not required, and Qt is needed only by the separate application.
 
 ## Install
 
-**Current installation target: Arch Linux x86_64, with optional Omarchy integration.**
+**Installation targets: Ubuntu 26.04 LTS, Fedora 45, and Arch Linux on x86-64.**
+See [native package installation](docs/NATIVE_PACKAGES.md) for DEB, RPM and Arch release packages.
 This is a development preview with bounded MiniFuse 4 hardware validation.
 
 Download the archive and its checksum file from the
@@ -67,7 +68,8 @@ checksum together; a checksum checks integrity against that published file.
 | MiniFuse 1 / 2 / 2 OTG | Automatic layouts; experimental inputs, native loopback mixer/routing/meters and host presets, gated by firmware and explicit opt-in; hardware tests pending |
 | Arch Linux x86_64 | Native packages and complete installation kit available |
 | Omarchy | Optional panel; tested host versions are recorded in the desktop source lock |
-| Ubuntu / Debian / Fedora | Native distribution packages planned; current installer does not support them |
+| Ubuntu 26.04 LTS / Fedora 45 x86_64 | Native DEB / RPM packages in distribution releases |
+| Debian | Native package planned |
 | Other desktop environments | Application has no Omarchy dependency; wider session acceptance remains open |
 
 **Model-support test branch:** see [model-specific controls](docs/models/README.md),
