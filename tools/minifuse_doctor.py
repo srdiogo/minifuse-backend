@@ -72,15 +72,50 @@ def probe(runtime, uid):
                 not isinstance(device, dict) for device in devices
             ):
                 raise ValueError("Invalid service inventory")
-    mf4 = [device for device in devices if device.get("product_id") == 0xAF70]
-    ready = len(mf4) == 1 and mf4[0].get("connection") == "ready"
-    capabilities = mf4[0].get("capabilities", {}) if ready else {}
-    features = ("mixer", "switch_readback", "input_switches", "signal_meters")
+    return inventory_summary(devices)
+
+
+def inventory_summary(devices):
+    """Report model readiness without copying device identities or settings."""
+    names = {
+        0xAF80: "MiniFuse 1",
+        0xAF90: "MiniFuse 2",
+        0xAF93: "MiniFuse 2 OTG",
+        0xAF70: "MiniFuse 4",
+    }
+    selected = devices[0] if len(devices) == 1 else {}
+    pid = selected.get("product_id")
+    ready = pid in names and selected.get("connection") == "ready"
+    capabilities = selected.get("capabilities", {}) if ready else {}
+    features = (
+        ("mixer", "switch_readback", "input_switches", "signal_meters")
+        if pid == 0xAF70
+        else ("switch_readback", "input_switches")
+    )
+    firmware = selected.get("firmware", {})
+    firmware = (
+        {
+            k: firmware[k]
+            for k in ("version", "raw_bcd", "loopback_compatible", "required_family")
+            if k in firmware
+        }
+        if isinstance(firmware, dict)
+        else {}
+    )
     return {
         "api_major": 1,
         "device_count": len(devices),
-        "mf4_ready": ready,
-        "verified_features": isinstance(capabilities, dict)
+        "mf4_ready": ready and pid == 0xAF70,
+        "device_ready": ready,
+        "model": names.get(pid, "Unavailable or initialization mode"),
+        "experimental": pid in (0xAF80, 0xAF90, 0xAF93),
+        "firmware": firmware,
+        "native_loopback_ready": ready
+        and isinstance(capabilities, dict)
+        and capabilities.get("mixer") is True
+        and pid in (0xAF80, 0xAF90, 0xAF93),
+        "verified_features": ready
+        and isinstance(capabilities, dict)
         and all(capabilities.get(name) is True for name in features),
     }
 
@@ -140,13 +175,35 @@ def diagnose(root=Path("/"), env=None, uid=None, kernel=None, no_service=False):
             result = probe(runtime, uid)
             add("service_api", True, "Connected to API v1")
             add(
-                "mf4_ready", result["mf4_ready"], "Exactly one MiniFuse 4 must be ready"
+                "device_ready",
+                result["device_ready"],
+                "Exactly one normal-mode MiniFuse must be ready: " + result["model"],
             )
             add(
                 "verified_features",
                 result["verified_features"],
-                "Mixer, input readback/writes and meters must be available",
+                "The selected model must advertise its implemented readback/control features",
             )
+            if result["experimental"]:
+                firmware = (
+                    result["firmware"] if isinstance(result["firmware"], dict) else {}
+                )
+                add(
+                    "loopback_compatibility",
+                    result["native_loopback_ready"],
+                    "Native loopback: firmware "
+                    + str(firmware.get("version") or "unknown")
+                    + "; experimental family "
+                    + str(firmware.get("required_family") or "unknown")
+                    + "; matching module and explicit loopback opt-in required",
+                    False,
+                )
+                add(
+                    "hardware_validation",
+                    False,
+                    "Experimental model: physical acceptance is pending; see the model testing guide",
+                    False,
+                )
             add(
                 "inventory",
                 result["device_count"] > 0,

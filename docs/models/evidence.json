@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "evidence_level": "static_host_analysis_not_hardware_validation",
+  "source": {
+    "product": "Arturia MiniFuse Control Center",
+    "version": "1.4.2.1381",
+    "binary_sha256": "e2d8335a67b3be7bbaaf7952d53282e084a10d7d50c28ec4ca529b2e02cf106d",
+    "image_base": "0x140000000",
+    "target_executed": false,
+    "source_unchanged": true
+  },
+  "analysis": {
+    "rea": "6.8.0",
+    "ghidra": "12.1.4",
+    "java": "21.0.13+9",
+    "node": "v26.7.0",
+    "node_support": "Below the declared REA engine range; actual analysis completed successfully",
+    "completed_utc": "2026-11-01T19:41:05.400Z",
+    "disabled_analyzers": [
+      "WindowsResourceReference"
+    ],
+    "assembly_cross_checks": true
+  },
+  "witnesses": [
+    {
+      "finding": "MF1/MF2 state-word count",
+      "rva": "0x708c30",
+      "va": "0x140708c30",
+      "bytes": "b8 17 00 00 00 c3"
+    },
+    {
+      "finding": "MF2 OTG state-word count",
+      "rva": "0x71f290",
+      "va": "0x14071f290",
+      "bytes": "b8 1a 00 00 00 c3"
+    },
+    {
+      "finding": "B2 request",
+      "rva": "0x48ca12",
+      "va": "0x14048ca12",
+      "bytes": "c6 45 77 b2"
+    },
+    {
+      "finding": "state-length virtual dispatch",
+      "rva": "0x48ca27",
+      "va": "0x14048ca27",
+      "bytes": "ff 90 80 00 00 00"
+    },
+    {
+      "finding": "word-to-byte conversion",
+      "rva": "0x48ca2d",
+      "va": "0x14048ca2d",
+      "bytes": "66 03 c0"
+    },
+    {
+      "finding": "state enum-to-byte offset",
+      "rva": "0x48c1e7",
+      "va": "0x14048c1e7",
+      "bytes": "49 8d 14 47"
+    }
+  ],
+  "rea_results": [
+    {
+      "model": "mf1",
+      "function_rva": "0x485f10",
+      "result_sha256": "5a7611fdfe48c50a6b48d8eab362226afc09eac27f2dab2134fe5123ee60b888",
+      "status": "completed"
+    },
+    {
+      "model": "mf2",
+      "function_rva": "0x48d8b0",
+      "result_sha256": "6853b01c749ec7e6df247be2a79ed7e629b6e51a26e51a013ae24216c8e03e21",
+      "status": "completed"
+    },
+    {
+      "model": "mf2otg",
+      "function_rva": "0x495a40",
+      "result_sha256": "f718d60155b8ac82bd3c25b183fe7429ca64c4c007f148860b8ce3aa310dd05f",
+      "status": "completed"
+    }
+  ],
+  "resources": [
+    {
+      "model_resource": "Minifuse1",
+      "file": "param.xml",
+      "sha256": "61f3798a726ca00a617ad82a1b03d0e90b21bfe7c1cf42beb050e2388b85d605",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF80",
+        "sku": "minifuse-1"
+      },
+      "parameter_resource_sha256": "ee1e4044dd9fb75a2d0f68aa179bead063faabad772073820a28fcdeeb948a46"
+    },
+    {
+      "model_resource": "Minifuse1MSD",
+      "file": "param.xml",
+      "sha256": "5be2b770ccd8b9402c4cfbf1dd05cbe9f367d57ec492dc652d19eca9ef7f71db",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF82",
+        "sku": ""
+      }
+    },
+    {
+      "model_resource": "Minifuse2",
+      "file": "param.xml",
+      "sha256": "7a516fb3cf9c4044696da8141104694d57d1cdee9dfb74244c760ac3331d0df4",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF90",
+        "sku": "minifuse-2"
+      },
+      "parameter_resource_sha256": "2444205871bbabb79ae50a7cc6bcc4d001b2dbb42389b0668683cf26b588deee"
+    },
+    {
+      "model_resource": "Minifuse2MSD",
+      "file": "param.xml",
+      "sha256": "acd22019ec801350d155f26d86bf21d37a74060eeec5acba0c5aefa0d8dce100",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF92",
+        "sku": ""
+      }
+    },
+    {
+      "model_resource": "Minifuse2OTG",
+      "file": "param.xml",
+      "sha256": "2bfba6469932ddd3159dc560715ed2e6ecd090d40229aec0a6562def496ffeb4",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF93",
+        "sku": "minifuse-2-otg"
+      },
+      "parameter_resource_sha256": "d13c413e1065329ab67dbd72f258e8c87830a6a60eabcd1508237944c4be620f"
+    },
+    {
+      "model_resource": "Minifuse4",
+      "file": "param.xml",
+      "sha256": "11d3b19de85d001d9ace381424667a9e8253bd6b66204154b6396a53f4e5650e",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF70",
+        "sku": "minifuse-4"
+      },
+      "parameter_resource_sha256": "6628f0ab1f2736ca626bd28f1324cd4ac0914147d3054d8598c8db2ae3cb7bc1"
+    },
+    {
+      "model_resource": "Minifuse4MSD",
+      "file": "param.xml",
+      "sha256": "3fd0e23595b06f1c9b8302b3935d66ce856e4808cd83a3288d6bce0f684f11a8",
+      "usb_attributes": {
+        "vendor-id": "0x1C75",
+        "product-id": "0xAF72",
+        "sku": ""
+      }
+    }
+  ],
+  "expanded_analysis": {
+    "rea": "6.8.0",
+    "ghidra": "12.1.4",
+    "java": "21.0.13+9",
+    "node": "v26.12.1",
+    "node_archive_sha256": "6170b2d474e1c626f43cff3adc118df9fe3b573258a4fc3d850c8dbc6b079bbd",
+    "started_utc": "2026-11-01T21:03:49.913Z",
+    "function_results_completed_utc_approx": "2026-11-01T21:12:20Z",
+    "runner_exit": "idle queue deadline after completed function analyses",
+    "runner_closed_utc": "2026-11-01T22:33:53.163Z",
+    "source_unchanged": true,
+    "target_executed": false,
+    "results": [
+      {
+        "finding": "device-common-status",
+        "function_rva": "0x71c500",
+        "result_sha256": "aca6108d90ecbd7de01010efbcbdf804f28fb3dccec2ba79ea97272e5e5d5e8b",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "parameter-binding",
+        "function_rva": "0x48c6f0",
+        "result_sha256": "35e90c4aef942c486d6440ecaab23a8e157dc730aa15735d3203fba240532519",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "level-binding",
+        "function_rva": "0x488d90",
+        "result_sha256": "b51db2219eb60b6900da0488417b75faf4ff7398ff8c78a31544c38da035ddfa",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "meter-transfer",
+        "function_rva": "0x488f20",
+        "result_sha256": "bd24a51cdc113f25989a0bc7f1989576b62c315bff061722988dd86f73808710",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "firmware-ui-display",
+        "function_rva": "0x4575f0",
+        "result_sha256": "c52f1b7ae6dbfb78b288563437f360dc4b4fd0de6c0df7781beb1fad98dac950",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "firmware-read-closure-leaf",
+        "function_rva": "0x71d980",
+        "result_sha256": "9f1ea30f432ac20beecd1c5c8536fb4a9c04f674a5e6590a3580920a3259a97a",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "libusb-descriptor-read",
+        "function_rva": "0x73d520",
+        "result_sha256": "db710c1da2e251c45922c4ae944f1fbaf1e27f31614166d04a3fe59dc6252e58",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "tusb-descriptor-read",
+        "function_rva": "0x728990",
+        "result_sha256": "0e4be8e789495e97a7e15a2aeabd4b30f28b40d14c0e7537a9a130c108110f90",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "shared-level-pan-binding",
+        "function_rva": "0x482940",
+        "result_sha256": "3fcc2b5b002040cb00d3e4d3c1c509e8bb182a2eaa5873c36e8f254b853c9644",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "stereo-gain-pair-binding",
+        "function_rva": "0x48be40",
+        "result_sha256": "bd3adbe20deaa1c251b247b342cc6c3d3718b4c71dd01a6d23c3e120052583a9",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "meter-488ad0",
+        "function_rva": "0x488ad0",
+        "result_sha256": "77b04c5d4285fdfc08bbaf7c20d7d0947fde36ac5bb51cd9e718aab7d7efe72c",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "meter-490ba0",
+        "function_rva": "0x490ba0",
+        "result_sha256": "2c694d3f282668cdbef86bdbc9cb7e76f2d92287046510e236567c2694cc55d9",
+        "function_analysis": "completed"
+      },
+      {
+        "finding": "meter-4995f0",
+        "function_rva": "0x4995f0",
+        "result_sha256": "7983aaec8be96adf82b927cfdae23775345a7272adefb11fb72d601bb9678f1a",
+        "function_analysis": "completed"
+      }
+    ]
+  },
+  "firmware_policy": {
+    "source": "standard USB device descriptor bcdDevice, offset 12",
+    "display_decoder": "major=raw>>8; minor=(raw>>4)&15; patch=raw&15",
+    "families": {
+      "mf1": "1.5.x",
+      "mf2": "1.5.x",
+      "mf2_otg": "1.0.x"
+    },
+    "unknown_or_unreviewed_families": "deny native loopback",
+    "hardware_acceptance": "pending",
+    "sources": [
+      "https://www.arturia.com/products/audio/minifuse/update",
+      "https://www.arturia.com/support/downloads-manuals/product/minifuse-2-otg"
+    ]
+  },
+  "native_meter_layout": {
+    "request_type": "0xa1",
+    "request": "0xc2",
+    "value": 0,
+    "index": 0,
+    "bytes": {
+      "mf1": 16,
+      "mf2": 16,
+      "mf2_otg": 24
+    },
+    "samples": [
+      "analog1",
+      "analog2 (unused on MF1)",
+      "loopback_left",
+      "loopback_right",
+      "otg_left (OTG only)",
+      "otg_right (OTG only)"
+    ],
+    "linear_conversion": "(signed_i32_le >> 8) / 8388608",
+    "physical_validation": "pending"
+  }
+}

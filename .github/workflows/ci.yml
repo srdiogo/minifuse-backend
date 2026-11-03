@@ -18,6 +18,10 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           components: rustfmt, clippy
       - run: make check
+      - name: Verify generated native model fixture
+        run: |
+          cargo run --locked -p mf-core --example loopback_fixture > "$RUNNER_TEMP/loopback-v1.json"
+          cmp docs/models/loopback-v1.json "$RUNNER_TEMP/loopback-v1.json"
       - run: make check-tools
       - run: sha256sum -c docs/mf4/SHA256SUMS
       - run: make build

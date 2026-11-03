@@ -19,6 +19,33 @@ pub fn db_word(text: &str, low: f64, high: f64) -> Result<u16, String> {
     Ok(((db * 256.0).round() as i16) as u16)
 }
 
+/// Shared equal-power gain conversion used by the inspected host controls.
+pub(crate) fn encode_level_pan(db: Option<f64>, p: f64) -> (u16, u16) {
+    if let Some(db) = db {
+        let encode = |amplitude: f64| -> u16 {
+            if amplitude <= 0.0 {
+                return 0x8000;
+            }
+            ((db + 20.0 * amplitude.log10())
+                .mul_add(256.0, 0.0)
+                .trunc()
+                .clamp(-32767.0, 3072.0) as i16) as u16
+        };
+        if p == 0.0 {
+            (encode(1.0), 0x8000)
+        } else if p == 1.0 {
+            (0x8000, encode(1.0))
+        } else {
+            (
+                encode((std::f64::consts::FRAC_PI_2 * p).cos()),
+                encode((std::f64::consts::FRAC_PI_2 * p).sin()),
+            )
+        }
+    } else {
+        (0x8000, 0x8000)
+    }
+}
+
 pub fn channel(
     state: &State,
     mix: Mix,
@@ -45,29 +72,7 @@ pub fn channel(
         } else {
             old_level.map(|db| db.clamp(-60.0, 12.0))
         };
-        let (l, r) = if let Some(db) = db {
-            let encode = |amplitude: f64| -> u16 {
-                if amplitude <= 0.0 {
-                    return 0x8000;
-                }
-                ((db + 20.0 * amplitude.log10())
-                    .mul_add(256.0, 0.0)
-                    .trunc()
-                    .clamp(-32767.0, 3072.0) as i16) as u16
-            };
-            if p == 0.0 {
-                (encode(1.0), 0x8000)
-            } else if p == 1.0 {
-                (0x8000, encode(1.0))
-            } else {
-                (
-                    encode((std::f64::consts::FRAC_PI_2 * p).cos()),
-                    encode((std::f64::consts::FRAC_PI_2 * p).sin()),
-                )
-            }
-        } else {
-            (0x8000, 0x8000)
-        };
+        let (l, r) = encode_level_pan(db, p);
         changes.push(Change {
             selector: (LEFT[i] << 8) | ch as u16,
             value: l,

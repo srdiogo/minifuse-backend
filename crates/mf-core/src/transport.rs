@@ -29,6 +29,9 @@ impl Device {
         if self.vendor_id != VID {
             return Err("Unexpected USB vendor in device record".into());
         }
+        if self.product_id != crate::MF4_PID {
+            return Err("This transport requires a MiniFuse 4 in its normal control mode".into());
+        }
         Model::from_pid(self.product_id)
             .ok_or("Unsupported MiniFuse product ID")?
             .require_mixer()
@@ -40,6 +43,9 @@ impl Device {
 pub struct ModuleCapabilities {
     pub input_switches: bool,
     pub signal_meters: bool,
+    pub basic_switches: bool,
+    pub basic_loopback: bool,
+    pub basic_meters: bool,
 }
 impl ModuleCapabilities {
     fn decode(data: &[u8]) -> Result<Self, Error> {
@@ -57,12 +63,15 @@ impl ModuleCapabilities {
         Ok(Self {
             input_switches: data[8] & 1 != 0,
             signal_meters: data[8] & 2 != 0,
+            basic_switches: data[8] & 4 != 0,
+            basic_loopback: data[8] & 8 != 0,
+            basic_meters: data[8] & 16 != 0,
         })
     }
 }
 
 pub struct Kernel {
-    file: File,
+    pub(crate) file: File,
 }
 
 fn word(data: &[u8], offset: usize) -> u16 {

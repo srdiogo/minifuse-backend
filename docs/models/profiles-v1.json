@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "fixture_kind": "synthetic_presentation_metadata",
+  "devices": [
+    {
+      "product_id": 44928,
+      "profile": {
+        "schema_version": 1,
+        "id": "mf1",
+        "model": "MiniFuse 1",
+        "device_mode": "control",
+        "layout": "inputs_and_monitoring",
+        "analog_inputs": 1,
+        "analog_outputs": 2,
+        "input_controls": [
+          {
+            "target": "inst1",
+            "label": "INST 1",
+            "description": "Instrument mode for input 1"
+          },
+          {
+            "target": "phantom_power",
+            "label": "+48 V",
+            "description": "Phantom power for input 1"
+          },
+          {
+            "target": "direct_monitor",
+            "label": "Direct monitor",
+            "description": "Direct monitoring of the physical input"
+          }
+        ],
+        "hardware_validation": "pending"
+      }
+    },
+    {
+      "product_id": 44944,
+      "profile": {
+        "schema_version": 1,
+        "id": "mf2",
+        "model": "MiniFuse 2",
+        "device_mode": "control",
+        "layout": "inputs_and_monitoring",
+        "analog_inputs": 2,
+        "analog_outputs": 2,
+        "input_controls": [
+          {
+            "target": "inst1",
+            "label": "INST 1",
+            "description": "Instrument mode for input 1"
+          },
+          {
+            "target": "inst2",
+            "label": "INST 2",
+            "description": "Instrument mode for input 2"
+          },
+          {
+            "target": "phantom_power",
+            "label": "+48 V · 1–2",
+            "description": "Shared phantom power for inputs 1 and 2"
+          },
+          {
+            "target": "direct_monitor",
+            "label": "Direct mono",
+            "description": "Mono summing for direct monitoring"
+          }
+        ],
+        "hardware_validation": "pending"
+      }
+    },
+    {
+      "product_id": 44947,
+      "profile": {
+        "schema_version": 1,
+        "id": "mf2_otg",
+        "model": "MiniFuse 2 OTG",
+        "device_mode": "control",
+        "layout": "inputs_and_monitoring",
+        "analog_inputs": 2,
+        "analog_outputs": 2,
+        "input_controls": [
+          {
+            "target": "inst1",
+            "label": "INST 1",
+            "description": "Instrument mode for input 1"
+          },
+          {
+            "target": "inst2",
+            "label": "INST 2",
+            "description": "Instrument mode for input 2"
+          },
+          {
+            "target": "phantom_power",
+            "label": "+48 V · 1–2",
+            "description": "Shared phantom power for inputs 1 and 2"
+          },
+          {
+            "target": "direct_monitor",
+            "label": "Direct mono",
+            "description": "Mono summing for direct monitoring"
+          }
+        ],
+        "hardware_validation": "pending"
+      }
+    },
+    {
+      "product_id": 44912,
+      "profile": {
+        "schema_version": 1,
+        "id": "mf4",
+        "model": "MiniFuse 4",
+        "device_mode": "control",
+        "layout": "mf4_mixer",
+        "analog_inputs": 4,
+        "analog_outputs": 4,
+        "input_controls": [
+          {
+            "target": "inst1",
+            "label": "INST 1",
+            "description": "Instrument mode for input 1"
+          },
+          {
+            "target": "inst2",
+            "label": "INST 2",
+            "description": "Instrument mode for input 2"
+          },
+          {
+            "target": "phantom_power",
+            "label": "+48 V · 1–2",
+            "description": "Shared phantom power for inputs 1 and 2"
+          }
+        ],
+        "hardware_validation": "bounded_reference"
+      }
+    },
+    {
+      "product_id": 44930,
+      "profile": {
+        "schema_version": 1,
+        "id": "mf1",
+        "model": "MiniFuse 1",
+        "device_mode": "initialization",
+        "layout": "initialization",
+        "analog_inputs": 1,
+        "analog_outputs": 2,
+        "input_controls": [],
+        "hardware_validation": "pending"
+      }
+    },
+    {
+      "product_id": 44946,
+      "profile": {
+        "schema_version": 1,
+        "id": "mf2",
+        "model": "MiniFuse 2",
+        "device_mode": "initialization",
+        "layout": "initialization",
+        "analog_inputs": 2,
+        "analog_outputs": 2,
+        "input_controls": [],
+        "hardware_validation": "pending"
+      }
+    },
+    {
+      "product_id": 44914,
+      "profile": {
+        "schema_version": 1,
+        "id": "mf4",
+        "model": "MiniFuse 4",
+        "device_mode": "initialization",
+        "layout": "initialization",
+        "analog_inputs": 4,
+        "analog_outputs": 4,
+        "input_controls": [],
+        "hardware_validation": "pending"
+      }
+    }
+  ]
+}

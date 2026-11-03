@@ -132,7 +132,7 @@ step. Disconnecting the device never enables startup or changes system audio.
 
 ## Button boundary
 
-The core may eventually decode a validated physical-button signal; the service
+The core decodes the validated MF4 short-release counter; the service
 publishes `control_panel_requested`. It does not choose an application, run a
 command or depend on Omarchy. Keep that capability unavailable until short
 release, wraparound, reconnect and long-press behavior have been measured.

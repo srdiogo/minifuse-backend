@@ -7,7 +7,8 @@ remain separate projects.
 
 ## Build and check
 
-Requires Linux, Rust 1.85+, a C compiler for ABI tests, Python 3.12+ for tooling,
+Requires Linux, Rust 1.85+, a C compiler with AddressSanitizer/UndefinedBehaviorSanitizer
+for ABI/driver tests, Python 3.12+ for tooling,
 systemd tools for distribution checks and the committed Cargo lockfile.
 
 ```sh
@@ -20,7 +21,12 @@ make check-distribution
 
 `make check` runs formatting, workspace tests and Clippy. Distribution checks
 stage/remove files and exercise isolated socket/process cleanup. They do not
-enable user startup or load a module. Driver compilation is separate:
+enable user startup or load a module. The driver fault-injection test compiles
+the production model transaction header with in-memory kernel/USB hooks. It
+exercises 122 rejection, partial-write, readback, rollback and lost-reply scenarios
+without device access. It requires a normal untraced run for LeakSanitizer;
+actual device behavior remains subject to model acceptance. Driver compilation
+is separate:
 
 ```sh
 make check-driver KDIR=/path/to/matching/kernel/build

@@ -35,7 +35,20 @@ without runtime-log errors.
 Offline validation passed 24 service tests and 19 GUI tests under both Basic
 and Fusion styles, including socket behavior, meter expiry and preservation of
 edits. Core tests and the independent module build are tracked in the core PRs.
-Active analog signal injection into inputs 2–4, other sample rates, logo-button
-events, forced rollback failures and nonvolatile saving remain outside this
+Active analog signal injection into inputs 2–4, other sample rates, forced rollback failures and nonvolatile saving remain outside this
 validation. No microphone PCM, full private state, device serial or host ID is
 included in this report.
+
+## Logo-button validation, 2 November 2026
+
+A separate read-only session confirmed three operator-triggered short releases
+and the 7 → 8 → 9 → 0 counter sequence on MF4 USB firmware descriptor 1.0.1.
+Only payload byte 14 changed. [Protocol evidence and limits](mf4/logo-button.md)
+and the [sanitized evidence index](mf4/logo-button-evidence.json) describe this
+additional scope; they do not extend the earlier audio/sleep acceptance.
+
+The operator then confirmed opening and single-window presentation from the
+physical button. A nonzero startup baseline produced no launch. The final
+agent's restart preserved the GUI process in a separate user unit. Across nine
+live events in two sessions, the final state differed only at counter byte 14.
+These additional checks do not claim long-press Sleep or another firmware/model.

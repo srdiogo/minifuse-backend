@@ -82,7 +82,7 @@ their previous behavior.
 MF1/MF2 advertise no mixer/snapshot capability and never receive inferred B2
 queries. MF4 decodes the three input switches from B2; MF1/MF2 do not inherit those
 fields or selectors. MF4 signal meters use a fixed read-only C2 query when the active module
-advertises it. Physical-logo-button events remain unavailable.
+advertises it. MF4 short-release counter decoding is available; runtime enablement requires the validated device, firmware and confirmed state described in [button support](mf4/logo-button.md).
 Capabilities describe potentially supported membership; the planner also checks
 the actual topology. Device readback still does not prove nonvolatile saving.
 

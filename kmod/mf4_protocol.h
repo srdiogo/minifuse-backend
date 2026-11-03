@@ -41,7 +41,7 @@ static inline int mf_legacy_allowed(__u16 pid, __u16 selector)
 {
 	if (pid == 0xaf70)
 		return selector == 0x0000 || selector == 0x0001 || selector == 0x0300;
-	if (pid == 0xaf80 || pid == 0xaf82 || pid == 0xaf90)
+	if (pid == 0xaf80 || pid == 0xaf90)
 		return selector == 0x0000 || selector == 0x0400 || selector == 0x0500;
 	return 0;
 }

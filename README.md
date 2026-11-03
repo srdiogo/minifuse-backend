@@ -64,18 +64,24 @@ checksum together; a checksum checks integrity against that published file.
 | Area | Current status |
 |---|---|
 | MiniFuse 4 | Mixer, routes, input switches and meters have bounded hardware validation |
-| MiniFuse 1 / 2 | Full desktop controls unavailable; their layouts are not inferred from MF4 |
+| MiniFuse 1 / 2 / 2 OTG | Automatic layouts; experimental inputs, native loopback mixer/routing/meters and host presets, gated by firmware and explicit opt-in; hardware tests pending |
 | Arch Linux x86_64 | Native packages and complete installation kit available |
 | Omarchy | Optional panel; tested host versions are recorded in the desktop source lock |
 | Ubuntu / Debian / Fedora | Native distribution packages planned; current installer does not support them |
 | Other desktop environments | Application has no Omarchy dependency; wider session acceptance remains open |
+
+**Model-support test branch:** see [model-specific controls](docs/models/README.md),
+[static analysis evidence](docs/models/EVIDENCE.md) and the
+[hardware acceptance guide](docs/models/TESTING.md). The installation preview
+linked above predates this feature. We welcome MF1, MF2 and MF2 OTG owners
+who can provide readbacks, LED checks and minimal Windows USB captures.
 
 An operator confirmed immediate and post-reboot operation of the installation
 kit. The report did not identify a clean-machine versus upgrade setup; see
 [installation evidence](docs/INSTALLATION_VALIDATION.md). Other hardware,
 kernels and desktop combinations need their own validation.
 
-Physical-logo events, effects, firmware changes and device-storage writes are
+MF4 short-press logo events are available with validated USB firmware descriptor 1.0.1; see [button support](docs/mf4/logo-button.md). Effects, firmware changes and device-storage writes are
 outside the available feature set. Presets are files on the computer and are
 restored only by explicit user action.
 

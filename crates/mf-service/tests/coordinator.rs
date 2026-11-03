@@ -30,6 +30,7 @@ struct Data {
     signal_meters: bool,
     meter_reads: usize,
     meter_failure: bool,
+    read_failure: bool,
 }
 impl Fake {
     fn new() -> Self {
@@ -43,6 +44,7 @@ impl Fake {
                 },
                 model: Model::MiniFuse4,
                 connection_marker: 1,
+                firmware: None,
             }],
             state: State::from_hex(include_str!("fixtures/windows-b2.hex").trim()).unwrap(),
             reads: 0,
@@ -51,6 +53,7 @@ impl Fake {
             signal_meters: false,
             meter_reads: 0,
             meter_failure: false,
+            read_failure: false,
         })))
     }
 }
@@ -72,6 +75,12 @@ impl Hardware for Fake {
     fn read(&mut self) -> Result<(Device, State)> {
         let mut d = self.0.lock().unwrap();
         d.reads += 1;
+        if d.read_failure {
+            return Err(protocol::ApiError::new(
+                "transfer_failed",
+                "Injected read failure",
+            ));
+        }
         Ok((d.descriptors[0].device.clone(), d.state.clone()))
     }
     fn module_capabilities(&mut self) -> Result<ModuleCapabilities> {
@@ -79,6 +88,9 @@ impl Hardware for Fake {
         Ok(ModuleCapabilities {
             input_switches: d.input_switches,
             signal_meters: d.signal_meters,
+            basic_switches: false,
+            basic_loopback: false,
+            basic_meters: false,
         })
     }
     fn meters(&mut self) -> Result<(Device, mf_core::Meters)> {
@@ -843,4 +855,112 @@ fn meter_samples_are_gated_ephemeral_and_failure_clears_data() {
     test.hardware.0.lock().unwrap().signal_meters = false;
     test.coordinator.refresh().unwrap();
     assert_eq!(test.state()["capabilities"]["signal_meters"], false);
+}
+
+fn enable_logo(test: &mut Test, counter: u16) {
+    let mut data = test.hardware.0.lock().unwrap();
+    data.descriptors[0].firmware = mf_core::FirmwareVersion::from_bcd(0x0101);
+    data.state.set_word(14, counter);
+}
+fn button_events(test: &Test) -> Vec<Value> {
+    test.coordinator
+        .pending_events
+        .iter()
+        .filter(|(_, event)| event["event"] == "control_panel_requested")
+        .map(|(_, event)| event.clone())
+        .collect()
+}
+#[test]
+fn logo_events_baseline_wrap_unique_ids_and_no_writes() {
+    let mut test = Test::new();
+    enable_logo(&mut test, 7);
+    let baseline = test.call("subscribe", json!({"events":["control_panel_requested"]}));
+    assert_eq!(
+        baseline["result"]["devices"][0]["capabilities"]["control_panel_button"],
+        true
+    );
+    assert!(test.coordinator.has_control_panel_subscribers());
+    assert!(button_events(&test).is_empty());
+    for counter in [8, 9, 0] {
+        test.hardware.0.lock().unwrap().state.set_word(14, counter);
+        test.coordinator.refresh().unwrap();
+        test.coordinator.refresh().unwrap();
+    }
+    let events = button_events(&test);
+    assert_eq!(events.len(), 3);
+    let mut ids = std::collections::HashSet::new();
+    for (index, event) in events.iter().enumerate() {
+        assert_eq!(event["seq"], index + 1);
+        assert_eq!(
+            event["data"]["device_id"],
+            baseline["result"]["devices"][0]["device_id"]
+        );
+        assert_eq!(
+            event["data"]["generation"],
+            baseline["result"]["devices"][0]["generation"]
+        );
+        assert!(ids.insert(event["data"]["event_id"].as_str().unwrap()));
+        assert_eq!(event["data"]["gesture"], "short_press");
+    }
+    assert_eq!(test.hardware.0.lock().unwrap().writes, 0);
+    assert!(
+        !test.directory.join("metadata/operations").exists()
+            || fs::read_dir(test.directory.join("metadata/operations"))
+                .unwrap()
+                .next()
+                .is_none()
+    );
+    test.coordinator.disconnected(1);
+    assert!(!test.coordinator.has_control_panel_subscribers());
+}
+#[test]
+fn logo_fails_closed_for_unknown_firmware_invalid_counter_and_read_recovery() {
+    let mut test = Test::new();
+    test.call("subscribe", json!({"events":["control_panel_requested"]}));
+    for firmware in [None, mf_core::FirmwareVersion::from_bcd(0x0102)] {
+        test.hardware.0.lock().unwrap().descriptors[0].firmware = firmware;
+        for counter in [7, 8] {
+            test.hardware.0.lock().unwrap().state.set_word(14, counter);
+            test.coordinator.refresh().unwrap();
+            assert!(!test.coordinator.has_control_panel_subscribers());
+        }
+    }
+    enable_logo(&mut test, 7);
+    test.coordinator.refresh().unwrap();
+    for invalid in [10, 255, 256, 0xffff] {
+        test.hardware.0.lock().unwrap().state.set_word(14, invalid);
+        test.coordinator.refresh().unwrap();
+        assert!(!test.coordinator.has_control_panel_subscribers());
+        test.hardware.0.lock().unwrap().state.set_word(14, 8);
+        test.coordinator.refresh().unwrap();
+    }
+    test.hardware.0.lock().unwrap().read_failure = true;
+    test.coordinator.refresh().unwrap();
+    test.hardware.0.lock().unwrap().read_failure = false;
+    test.hardware.0.lock().unwrap().state.set_word(14, 9);
+    test.coordinator.refresh().unwrap();
+    assert!(button_events(&test).is_empty());
+    // A new connection also starts from a baseline, even if its counter differs.
+    test.hardware.0.lock().unwrap().descriptors[0].connection_marker += 1;
+    test.hardware.0.lock().unwrap().state.set_word(14, 0);
+    test.coordinator.refresh().unwrap();
+    assert!(button_events(&test).is_empty());
+    test.hardware.0.lock().unwrap().state.set_word(14, 1);
+    test.coordinator.refresh().unwrap();
+    assert_eq!(button_events(&test).len(), 1);
+    assert_eq!(test.hardware.0.lock().unwrap().writes, 0);
+}
+#[test]
+fn logo_does_not_replay_old_counter_changes_after_a_polling_gap() {
+    let mut test = Test::new();
+    enable_logo(&mut test, 7);
+    test.call("subscribe", json!({"events":["control_panel_requested"]}));
+    std::thread::sleep(std::time::Duration::from_millis(2100));
+    test.hardware.0.lock().unwrap().state.set_word(14, 9);
+    test.coordinator.refresh().unwrap();
+    assert!(button_events(&test).is_empty());
+    // Multiple unobserved presses are coalesced into one event, never replayed.
+    test.hardware.0.lock().unwrap().state.set_word(14, 2);
+    test.coordinator.refresh().unwrap();
+    assert_eq!(button_events(&test).len(), 1);
 }

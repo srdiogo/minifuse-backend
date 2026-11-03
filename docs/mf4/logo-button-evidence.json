@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "model": "MiniFuse 4",
+  "vendor_id": "1c75",
+  "product_id": "af70",
+  "usb_firmware_bcd": "0101",
+  "capture_sha256": "bcfa36f495b17a68ab6ce36426b49b15c8826f06b6bf7e518b4cbd092b6d0504",
+  "device_write_attempted": false,
+  "observations": [
+    {
+      "elapsed_s": 0.000283,
+      "counter": 7,
+      "changed_byte_offsets": []
+    },
+    {
+      "elapsed_s": 28.210935,
+      "counter": 8,
+      "changed_byte_offsets": [
+        14
+      ]
+    },
+    {
+      "elapsed_s": 97.396233,
+      "counter": 9,
+      "changed_byte_offsets": [
+        14
+      ]
+    },
+    {
+      "elapsed_s": 103.019612,
+      "counter": 0,
+      "changed_byte_offsets": [
+        14
+      ]
+    }
+  ],
+  "static_sources": [
+    {
+      "name": "MiniFuseControlCenterAgent.exe",
+      "sha256": "a42618f7f29b3f527f945b3e56a2020a69050371e3cd3e4e2e03445f0d767f99",
+      "image_base": "0x140000000",
+      "baseline_rva": "0x433aa0",
+      "compare_launch_or_present_rva": "0x433d30"
+    },
+    {
+      "name": "MF4 firmware 1.0.1.35",
+      "sha256": "c1d196e85624d72206e49447e769011c1d85982f212809138c7723bdc69a1e98",
+      "short_release_address": "0x6514"
+    }
+  ],
+  "desktop_acceptance": {
+    "gui_launch_operator_confirmed": true,
+    "single_window_operator_confirmed": true,
+    "events_before_restart": 8,
+    "counter_before": 0,
+    "counter_after": 9,
+    "changed_byte_offsets": [
+      14
+    ],
+    "startup_with_nonzero_counter_opened_window": false,
+    "agent_enabled_at_login": true,
+    "final_button_launch_confirmed": true,
+    "gui_has_independent_user_unit": true,
+    "agent_restart_preserved_gui_pid": true,
+    "repeated_presentation_preserved_gui_pid": true,
+    "gui_floating": true,
+    "final_session_events": 1
+  },
+  "implementation_sha256": {
+    "crates/mf-core/src/state.rs": "917c7b9415b9577d55089998b70ebb5afd074083b3488fde1adbc989cb42810a",
+    "crates/mf-service/src/coordinator.rs": "1fb6329ced8e8fbad79fbba00a97a9317bcb0f7c2514c22c6a73a2c64178303d",
+    "crates/mf-service/src/server.rs": "f75b6c6ad20e05efd0d310f9858f45c23c671ca9131285a11ec3eb5f13f349f6"
+  },
+  "desktop_source_sha256": {
+    "src/minifuse_control/desktop.py": "dea42bf5bbf2cf019ae094648107aea3721b87d8df9694e973ce5af2c7c52be7",
+    "src/minifuse_control/app.py": "8c4b775fda9ae5db1e4ab941571647558c8cc6215f283204c86564ad55144cf1"
+  }
+}

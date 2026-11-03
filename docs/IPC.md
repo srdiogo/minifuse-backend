@@ -47,7 +47,8 @@ or a stored preset. Plans include epoch/generation/revision and expire after
 | Method | Parameters | Result |
 |---|---|---|
 | `hello` | Client name, supported API majors; optional previous client token | Negotiated major, version, epoch, client token, protocol features |
-| `list_devices` | Empty | Inventory with model, connection state, capabilities and limitations |
+| `list_devices` | Empty | Inventory with model, connection state, capabilities, versioned presentation profile and limitations |
+| `get_model_profiles` | Empty | Read-only model catalog; no device read or write |
 | `get_state` | Device ID and generation | Confirmed revision, decoded state and capability metadata |
 | `subscribe` | Event names; optional device ID/generation | Subscription ID, current sequence and full relevant baseline |
 | `plan_changes` | Device ID, generation, expected revision, domain changes | Plan ID, predicted state, changes summary, expiry and omitted differences |
@@ -143,7 +144,11 @@ Initial reads/reconnection do not synthesize button or operation events.
 `control_panel_requested` contains device identity and a unique event ID, not
 an executable command or an Omarchy-specific target. One desktop agent owns
 activation policy. Multiple UIs can subscribe to state without all opening in
-response to the same hardware event.
+response to the same hardware event. Its data contains `device_id`, `generation`,
+`event_id`, `source: "arturia_logo"` and `gesture: "short_press"`. Subscribe only
+when runtime `capabilities.control_panel_button` is true. Support currently
+covers normal-mode MF4 with USB firmware descriptor 1.0.1 and a confirmed
+counter; see [evidence, polling and reset rules](mf4/logo-button.md).
 
 ## Retry and compatibility rules
 
@@ -251,3 +256,74 @@ revisions, invalidate plans or produce snapshots/journals. They share existing
 bounded event queues and disconnect-on-overflow behavior; stale data must clear
 in clients (the application uses a 500 ms freshness timeout). No frame is
 replayed after reconnect.
+
+## Model profiles and experimental basic state
+
+Inventory includes `profile` with `schema_version: 1`, stable `id` (`mf1`, `mf2`,
+`mf2_otg`, `mf4`), `device_mode`, `layout`, physical I/O counts, `input_controls`,
+`hardware_validation` and notes. It remains present when transport is disabled.
+`get_model_profiles` returns `{schema_version: 1, profiles: [{product_id, profile}]}`.
+Profiles select presentation; they do not grant any read/write capability.
+Unknown profile schemas/layouts must not enable controls. Multiple recognized
+interfaces require explicit selection; bundled clients leave controls unavailable.
+
+For an explicitly enabled test session, MF1/MF2/OTG `state.layout` is
+`minifuse-basic-b2-v1`, `mixes` is empty and `inputs` contains Boolean `inst1`,
+`phantom_power`, `direct_monitor`, and `inst2` for two-input models. `mixer`,
+`signal_meters` and `host_snapshots` remain false. `switch_readback` requires
+confirmed basic state; `input_switches` additionally requires matching module
+support. `input_switch` changes use the existing plan/apply operation with
+`target: direct_monitor` as an additive target, labeled direct mono on MF2/OTG.
+This basic-only mode does not expose live faders or presets. Complete-state
+revisions and durable outcomes retain their existing semantics.
+
+Initialization/storage modes have `layout: initialization`, no input controls
+and no audio capability. See [model support](models/README.md) for the separate
+46/52-byte driver ABI, opt-in gate, evidence and acceptance requirements.
+
+### Firmware-gated native loopback
+
+`list_devices` additionally reports `firmware` with `version`, `raw_bcd`,
+`source: usb_device_descriptor`, `loopback_compatible`, `required_family` and
+`hardware_validation`. Compatibility is model-specific, not permission.
+
+With the loopback opt-in, compatible confirmed firmware, exact state and matching
+module features, the runtime profile becomes `loopback_mixer`. Its state keeps
+`layout: minifuse-basic-b2-v1` and adds `firmware`, one `loopback` mix, independent
+`loopback: {enabled, usb12, monitor}` flags and an OTG-only `otg` object. `mixer`,
+`host_snapshots` and `signal_meters` reflect actual module support. Source names
+are analog1, analog2 when present, usb12, and usb34 (MF1/MF2) or usb56 (OTG).
+
+Use the existing channel/master and live-control methods for gain, analog pan,
+mute and master. USB pairs link gain/mute and expose `pan_available: false`.
+`mute_mixed`/`level_mixed` flag inconsistent stereo-pair state; the next deliberate
+linked adjustment changes both sides. Solo, membership, stereo pan and MF4
+route operations are unsupported for this layout.
+
+Additive discrete changes are:
+
+```json
+{"kind":"loopback_routing","enabled":true,"usb12":false,"monitor":true}
+```
+
+```json
+{"kind":"otg_routing","main_to_otg":1,"otg_to_monitor":false,"meter_source":3}
+```
+
+Fields are optional but at least one is required. Booleans/unsigned integers are
+strict; explicit null is invalid. OTG fields are rejected on other models. The
+source guide specifies each enum. These changes use ordinary plan/apply, full
+state preflight, durable outcomes and bounded rollback.
+
+Model snapshots use `layout: minifuse-basic-loopback-b2-v1` and required
+`firmware_bcd`. Restore requires the same PID and compatible firmware family;
+only mapped mixer/routing fields are selected. Input modes, phantom, direct
+monitoring and opaque bytes are preserved. Existing MF4 snapshot serialization
+is unchanged and cannot be used for another model.
+
+Model meter events retain the identity/generation and ephemeral semantics of
+`meters_updated`, with `meter_layout: minifuse-basic-c2-v1`, `available`,
+`inputs_dbfs` (one MF1 input, two otherwise), `loopback_dbfs` (L/R), `otg_dbfs`
+(L/R on OTG, null otherwise). Missing/stale samples are unavailable, not zero.
+These are not the MF4 ten-source/three-mix arrays. See the generated
+[synthetic wire fixture](models/loopback-v1.json) and [evidence](models/EVIDENCE.md).

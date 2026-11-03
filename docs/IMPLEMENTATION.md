@@ -63,7 +63,7 @@ logs. Do not cycle power/phantom solely to complete an unrelated software test.
 
 The initial release requires the core extraction, contract tests, capability
 gates, durable outcomes, bounded queues, reconnect handling and a tested package.
-Logo-button decoding remains unavailable. MF4 signal meters are calibrated and
+MF4 logo-button decoding and service events are implemented for validated USB firmware descriptor 1.0.1; see [evidence and limits](mf4/logo-button.md). MF4 signal meters are calibrated and
 implemented as ephemeral subscriptions. Unavailable features must never be
 represented by mock data in a shipping UI. Full MF1/MF2 GUI
 controls require their own evidence and hardware regression checks.
