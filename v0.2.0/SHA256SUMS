@@ -1,0 +1,9 @@
+f66ed119050402f0a9f2b6d2689e48b0922e6634e4fa02a4478971112abf48c7  SOURCES.json
+6a7fa5e2a4fff30aa1e77b2594eaaa5c04ff5de85395539f764cbc081ccab093  mf-service-0.2.0.r30.g77cac08-1-x86_64.pkg.tar.zst
+7fe2535c2bc31d9ff2d93415126485fb5eb02406c306e22cdd82c36bcde51765  minifuse-control-0.1.0.r33.gae926d7-1-any.pkg.tar.zst
+0ac130807872990bad8eb783565dbc1408d97103f8b0b43153869f7366f54e51  minifuse-control-common-0.1.0.r33.gae926d7-1-any.pkg.tar.zst
+3a2e03761d95eac31232e93f75058a26025fbaff7598f3e1a70dd2835413c84e  minifuse-desktop-agent-0.1.0.r33.gae926d7-1-any.pkg.tar.zst
+bef0b1c11d55e5a7c92a7a7e96a28739dc011f11e2570fbf20eca05419b0e733  minifuse-driver-dkms-0.2.0.r30.g77cac08-1-any.pkg.tar.zst
+493893fd95ac82638a23e024ccba4763ae78520ce6a1bc28000d3e1e0699bd38  minifuse-linux-0.2.0-1.fc45.x86_64.rpm
+7bab5a88431c8bdf4c22adc83aa39d56050b60b5db7b65a7edd1f41073bd0f3f  minifuse-linux_0.2.0-1_ubuntu26.04_amd64.deb
+f76c000e93969b7bfc516306b47a886eedfefc69b5d758b002494bcad21bf711  omarchy-minifuse-0.2.0.tar.gz
