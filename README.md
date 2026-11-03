@@ -26,39 +26,10 @@ is not required, and Qt is needed only by the separate application.
 
 ## Install
 
-**Installation targets: Ubuntu 26.04 LTS, Fedora 45, and Arch Linux on x86-64.**
-Download the [latest distribution release](https://github.com/srdiogo/minifuse-backend/releases) or browse the [package archive](https://github.com/srdiogo/minifuse-backend/tree/packages). See [native package installation](docs/NATIVE_PACKAGES.md) for DEB, RPM and Arch instructions.
-This is a development preview with bounded MiniFuse 4 hardware validation.
-
-Download the archive and its checksum file from the
-[complete installation preview](https://github.com/srdiogo/minifuse-backend/releases/tag/installer-preview-2026-10-29).
-From the download directory:
-
-```sh
-sha256sum -c minifuse-linux-installer-2026-10-29.tar.gz.sha256
-tar -xzf minifuse-linux-installer-2026-10-29.tar.gz
-cd minifuse-linux-installer-2026-10-29
-./install.sh
-```
-
-Run as your normal graphical-session user. The installer verifies the kit and
-shows its plan before requesting confirmation. It prepares dependencies,
-matching kernel headers, native packages and boot/login startup. The default
-installs the application and adds the panel when Omarchy is present.
-
-| What you want | Command inside the extracted kit |
-|---|---|
-| Application and backend, without the panel | `./install.sh --profile gui` |
-| Application, backend and Omarchy panel | `./install.sh --profile full` |
-| Backend and Omarchy panel, without the application | `./install.sh --profile omarchy` |
-| Driver and service only | `./install.sh --profile backend` |
-| Inspect the default plan without changes | `./install.sh --dry-run` |
-
-The published GUI packages target Python 3.14. Existing installations and custom
-kernels may need the options in the [installer guide](distribution/INSTALLER.md).
-For manual package builds, startup, updates and removal, use
-[the installation guide](docs/INSTALL.md). Keep the downloaded archive and
-checksum together; a checksum checks integrity against that published file.
+Install the full desktop application from [MiniFuse Control releases](https://github.com/srdiogo/minifuse-control/releases).
+Those downloads include this backend and the driver. For a standalone service
+and driver build for another frontend or CLI, see [backend installation](docs/INSTALL.md)
+and the [session API](docs/IPC.md).
 
 ## Compatibility
 
@@ -92,7 +63,7 @@ restored only by explicit user action.
 | Project | Purpose |
 |---|---|
 | [MiniFuse Control](https://github.com/srdiogo/minifuse-control) | Full mixer, routing, input controls and presets |
-| **MiniFuse Backend** — this repository | Driver, shared core, session API and complete installer |
+| **MiniFuse Backend** — this repository | Driver, shared core and session API for desktop clients and CLIs |
 | [MiniFuse for Omarchy](https://github.com/srdiogo/omarchy-minifuse) | Optional bar indicator and compact mixer |
 
 The backend repository was previously named `mf-service`. Installed package,
